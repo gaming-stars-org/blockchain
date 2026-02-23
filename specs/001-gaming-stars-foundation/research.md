@@ -26,9 +26,9 @@ Lock technical decisions that remove implementation ambiguity before coding.
 
 ### 4. Insurance Model
 
-- Decision: Insurance premium and refunds use USDT liquidity vault only.
-- Rationale: Single insurance currency simplifies solvency monitoring and settlement logic.
-- Tradeoff: Requires extra USDT transfer when entry mint is not USDT.
+- Decision: Insurance premium and refunds support two insurance mints only: `USDT` and `USDC`, each with dedicated global liquidity vault.
+- Rationale: Keeps operational flexibility for stablecoin liquidity while preserving bounded complexity.
+- Tradeoff: Slightly more validation and monitoring surface than single-mint design.
 
 ### 5. Replay Protection
 

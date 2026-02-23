@@ -5,6 +5,7 @@
 ### FactoryState
 
 - `owner: Pubkey`
+- `admins: Vec<Pubkey>`
 - `dev_wallet: Pubkey`
 - `master_wallet: Pubkey`
 - `operator_wallet: Pubkey`
@@ -24,7 +25,7 @@
 - `payout_ratio_num: u16`
 - `payout_ratio_den: u16`
 - `accepted_mints: Vec<Pubkey>`
-- `insurance_mint: Pubkey` (USDT)
+- `insurance_mints: Vec<Pubkey>` (supported set limited to USDT/USDC)
 - `last_activity_ts: i64`
 - `game_duration_secs: i64`
 - `user_ttl_secs: i64`
@@ -70,7 +71,7 @@
 - `InstanceAuthority`: `['instance-authority', instance_pubkey]`
 - `TreasuryVault`: `['treasury-vault', instance_pubkey, mint_pubkey]`
 - `LiquidityAuthority`: `['liquidity-authority']`
-- `GlobalLiquidityVaultUSDT`: `['global-liquidity-vault', usdt_mint_pubkey]`
+- `GlobalLiquidityVault`: `['global-liquidity-vault', insurance_mint_pubkey]`
 - `TicketRecord`: `['ticket', instance_pubkey, ticket_id_le_bytes]`
 - `SettlementReceipt`: `['settlement', settlement_id]`
 
@@ -94,7 +95,7 @@
 ## Invariants
 
 - Principal can leave treasury only through payout/forfeit settlement.
-- Refunds must source from global USDT liquidity vault.
+- Refunds must source from global liquidity vault matching refund mint (USDT/USDC only).
 - Beneficiary for payout/refund must equal `ticket.owner`.
 - Settlement ID is globally unique and consumed once.
 - Pause blocks all money-moving instructions.

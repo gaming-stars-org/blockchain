@@ -24,40 +24,44 @@
 ## Phase 3: US1 Controlled Entry (P1)
 
 - [ ] T013 [P] Add factory and instance auth tests in `tests/contract/factory-instance.spec.ts`
-- [ ] T014 [P] Add `buy_ticket` paid and sponsored happy-path tests in `tests/contract/buy-ticket.spec.ts`
-- [ ] T015 [P] Add operator cosigner negative tests in `tests/adversarial/buy-ticket-cosigner.spec.ts`
-- [ ] T016 [P] Add sponsored+insured and payer-authority negative tests in `tests/adversarial/buy-ticket-sponsored.spec.ts`
-- [ ] T017 Implement `initialize_factory`
-- [ ] T018 Implement `update_global_wallets`
-- [ ] T019 Implement `deploy_instance`
-- [ ] T020 Implement `freeze_instance` + `unfreeze_instance`
-- [ ] T021 Implement `buy_ticket`
+- [ ] T014 [P] Add add/remove admin RBAC tests in `tests/contract/rbac-admins.spec.ts`
+- [ ] T015 [P] Add `buy_ticket` paid and sponsored happy-path tests in `tests/contract/buy-ticket.spec.ts`
+- [ ] T016 [P] Add operator cosigner negative tests in `tests/adversarial/buy-ticket-cosigner.spec.ts`
+- [ ] T017 [P] Add sponsored+insured and payer-authority negative tests in `tests/adversarial/buy-ticket-sponsored.spec.ts`
+- [ ] T018 [P] Add insured premium/refund mint validation tests (`USDT`,`USDC`) in `tests/adversarial/insurance-mint.spec.ts`
+- [ ] T019 Implement `initialize_factory`
+- [ ] T020 Implement `add_admin` + `remove_admin`
+- [ ] T021 Implement `update_global_wallets`
+- [ ] T022 Implement `deploy_instance`
+- [ ] T023 Implement `freeze_instance` + `unfreeze_instance`
+- [ ] T024 Implement `buy_ticket`
 
 ## Phase 4: US2 Settlement and Replay (P2)
 
-- [ ] T022 [P] Add `settle_payout` tests in `tests/contract/settle-payout.spec.ts`
-- [ ] T023 [P] Add `settle_refund` tests in `tests/contract/settle-refund.spec.ts`
-- [ ] T024 [P] Add `settle_forfeit` tests in `tests/contract/settle-forfeit.spec.ts`
-- [ ] T025 [P] Add replay and beneficiary mismatch negatives in `tests/adversarial/replay-beneficiary.spec.ts`
-- [ ] T026 [P] Add batch parity tests in `tests/integration/settle-batch.spec.ts`
-- [ ] T027 Implement `topup_global_liquidity`
-- [ ] T028 Implement `settle_payout`
-- [ ] T029 Implement `settle_refund`
-- [ ] T030 Implement `settle_forfeit`
-- [ ] T031 Implement `settle_users_batch`
+- [ ] T025 [P] Add `settle_payout` tests in `tests/contract/settle-payout.spec.ts`
+- [ ] T026 [P] Add `settle_refund` tests in `tests/contract/settle-refund.spec.ts`
+- [ ] T027 [P] Add dual-mint global liquidity refund tests (`USDT`,`USDC`) in `tests/contract/settle-refund-dual-mint.spec.ts`
+- [ ] T028 [P] Add `settle_forfeit` tests in `tests/contract/settle-forfeit.spec.ts`
+- [ ] T029 [P] Add replay and beneficiary mismatch negatives in `tests/adversarial/replay-beneficiary.spec.ts`
+- [ ] T030 [P] Add batch parity tests in `tests/integration/settle-batch.spec.ts`
+- [ ] T031 Implement `topup_global_liquidity`
+- [ ] T032 Implement `settle_payout`
+- [ ] T033 Implement `settle_refund`
+- [ ] T034 Implement `settle_forfeit`
+- [ ] T035 Implement `settle_users_batch`
 
 ## Phase 5: US3 Operational Safety (P3)
 
-- [ ] T032 [P] Add pause matrix tests in `tests/integration/pause-matrix.spec.ts`
-- [ ] T033 [P] Add game-over behavior tests in `tests/integration/game-over.spec.ts`
-- [ ] T034 [P] Add operator rotation regression tests in `tests/adversarial/operator-rotation.spec.ts`
-- [ ] T035 Implement `set_game_over`
+- [ ] T036 [P] Add pause matrix tests in `tests/integration/pause-matrix.spec.ts`
+- [ ] T037 [P] Add game-over behavior tests in `tests/integration/game-over.spec.ts`
+- [ ] T038 [P] Add operator rotation regression tests in `tests/adversarial/operator-rotation.spec.ts`
+- [ ] T039 Implement `set_game_over`
 
 ## Phase 6: Finalization
 
-- [ ] T036 Run full localnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
-- [ ] T037 Run devnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
-- [ ] T038 Final docs consistency check against `contracts/onchain-instructions.md`
+- [ ] T040 Run full localnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
+- [ ] T041 Run devnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
+- [ ] T042 Final docs consistency check against `contracts/onchain-instructions.md`
 
 ## Execution Order
 

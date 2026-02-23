@@ -24,7 +24,7 @@ Run a deterministic smoke path for entry, settlement, security, and ops controls
 5. Execute paid ticket entry (insured=true).
 6. Execute sponsored ticket entry (insured=false).
 7. Settle one payout with multi-leg transfer.
-8. Settle one insured refund from global USDT liquidity.
+8. Settle one insured refund from global liquidity vault (`USDT` or `USDC` based on refund mint).
 9. Settle one uninsured forfeit to dev wallet ATA.
 10. Retry a previous settlement ID and confirm rejection.
 11. Freeze instance and confirm blocked money-moving instructions.

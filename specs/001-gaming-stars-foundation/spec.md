@@ -34,7 +34,7 @@ As backend operations, settlement must be idempotent and auditable with no doubl
 **Acceptance Scenarios**:
 
 1. **Given** active ticket and valid payout legs, **When** `settle_payout` runs, **Then** all legs transfer atomically and receipt is created.
-2. **Given** insured ticket, **When** `settle_refund` runs, **Then** refund sources from global USDT liquidity only.
+2. **Given** insured ticket, **When** `settle_refund` runs, **Then** refund sources from global liquidity vault matching refund mint (`USDT` or `USDC`) only.
 3. **Given** repeated `settlement_id`, **When** settlement is retried, **Then** it fails before transfer.
 
 ---
@@ -52,6 +52,7 @@ As operators, we need freeze/unfreeze/game-over controls for incident handling.
 1. **Given** paused instance, **When** money-moving instructions execute, **Then** they fail.
 2. **Given** game-over instance, **When** `buy_ticket` executes, **Then** it fails.
 3. **Given** rotated operator wallet, **When** old wallet signs privileged call, **Then** it fails.
+4. **Given** multiple admins configured by owner, **When** any admin deploys or pauses/unpauses an instance, **Then** action succeeds with correct authorization.
 
 ### Edge Cases
 
@@ -67,18 +68,20 @@ As operators, we need freeze/unfreeze/game-over controls for incident handling.
 ### Functional Requirements
 
 - **FR-001**: Contract MUST initialize one global `FactoryState`.
-- **FR-002**: Only owner MUST deploy/freeze/unfreeze instances and update global wallets.
-- **FR-003**: Only master wallet MUST top up global USDT liquidity vault.
-- **FR-004**: `buy_ticket` MUST require user signer and valid operator co-signer.
-- **FR-005**: `buy_ticket` MUST enforce `paid=user` and `sponsored=operator` payer mapping.
-- **FR-006**: `buy_ticket` MUST reject `sponsored + insured`.
-- **FR-007**: `buy_ticket` MUST enforce exact amount checks and atomic split.
-- **FR-008**: Settlement instructions MUST enforce beneficiary ownership and vault consistency.
-- **FR-009**: Settlement MUST be idempotent via unique `SettlementReceipt` PDA.
-- **FR-010**: Pause MUST block all money-moving instructions.
-- **FR-011**: Game-over MUST block new entries and allow settlement cleanup.
-- **FR-012**: Contract MUST emit canonical events and return canonical error codes.
-- **FR-013**: No admin path MAY drain principal directly from treasury.
+- **FR-002**: Contract MUST support multiple Admin addresses managed by owner.
+- **FR-003**: Only owner MUST update global wallets and manage admin list.
+- **FR-004**: Owner or Admin MUST be allowed to deploy/freeze/unfreeze instances.
+- **FR-005**: Only master wallet MUST top up global liquidity vaults for supported insurance mints (`USDT`, `USDC`).
+- **FR-006**: `buy_ticket` MUST require user signer and valid operator co-signer.
+- **FR-007**: `buy_ticket` MUST enforce `paid=user` and `sponsored=operator` payer mapping.
+- **FR-008**: `buy_ticket` MUST reject `sponsored + insured`.
+- **FR-009**: `buy_ticket` MUST enforce exact amount checks and atomic split.
+- **FR-010**: Settlement instructions MUST enforce beneficiary ownership and vault consistency.
+- **FR-011**: Settlement MUST be idempotent via unique `SettlementReceipt` PDA.
+- **FR-012**: Pause MUST block all money-moving instructions.
+- **FR-013**: Game-over MUST block new entries and allow settlement cleanup.
+- **FR-014**: Contract MUST emit canonical events and return canonical error codes.
+- **FR-015**: No owner/admin path MAY drain principal directly from treasury.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -87,7 +90,7 @@ As operators, we need freeze/unfreeze/game-over controls for incident handling.
 - **TicketRecord**
 - **SettlementReceipt**
 - **Treasury Vault (instance+mint)**
-- **Global Liquidity Vault (USDT)**
+- **Global Liquidity Vaults (USDT, USDC)**
 
 ## Success Criteria *(mandatory)*
 
