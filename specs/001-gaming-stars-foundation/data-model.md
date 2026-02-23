@@ -1,8 +1,8 @@
-# 03 - State Model and PDA Design
+# Data Model: Gaming Stars Foundation
 
-## Account Schemas
+## Entities
 
-## `FactoryState`
+### FactoryState
 
 - `owner: Pubkey`
 - `dev_wallet: Pubkey`
@@ -14,17 +14,17 @@
 - `updated_at: i64`
 - `bump: u8`
 
-## `GameInstance`
+### GameInstance
 
 - `instance_id: u64`
-- `status: InstanceStatus` (`active`, `paused`, `game_over`)
+- `status: InstanceStatus` (`active|paused|game_over`)
 - `ticket_price: u64`
 - `entry_fee: u64`
 - `insurance_premium: u64`
 - `payout_ratio_num: u16`
 - `payout_ratio_den: u16`
 - `accepted_mints: Vec<Pubkey>`
-- `insurance_mint: Pubkey` (USDT only)
+- `insurance_mint: Pubkey` (USDT)
 - `last_activity_ts: i64`
 - `game_duration_secs: i64`
 - `user_ttl_secs: i64`
@@ -35,87 +35,72 @@
 - `updated_at: i64`
 - `bump: u8`
 
-## `TicketRecord`
+### TicketRecord
 
 - `instance_id: u64`
 - `ticket_id: u64`
 - `owner: Pubkey`
 - `entry_mint: Pubkey`
-- `entry_mode: EntryMode` (`paid`, `sponsored`)
-- `paid_by: Pubkey` (actual payer authority for entry principal+fee)
+- `entry_mode: EntryMode` (`paid|sponsored`)
+- `paid_by: Pubkey`
 - `principal_amount: u64`
 - `insured: bool`
 - `created_at: i64`
-- `status: TicketStatus` (`active`, `paid`, `refunded`, `forfeited`)
+- `status: TicketStatus` (`active|paid|refunded|forfeited`)
 - `resolved_at: Option<i64>`
 - `resolution_kind: Option<ResolutionKind>`
 - `external_ref: Option<[u8; 32]>`
 - `bump: u8`
 
-## `SettlementReceipt`
+### SettlementReceipt
 
 - `settlement_id: [u8; 32]`
 - `instance_id: u64`
 - `ticket_id: u64`
-- `kind: SettlementKind` (`payout`, `refund`, `forfeit`)
+- `kind: SettlementKind` (`payout|refund|forfeit`)
 - `payload_hash: [u8; 32]`
 - `executor: Pubkey`
 - `executed_at: i64`
 - `bump: u8`
 
-## PDA Seeds
-
-## Factory
+## PDA Derivation
 
 - `FactoryState`: `['factory-state']`
-
-## Instance
-
 - `GameInstance`: `['instance', instance_id_le_bytes]`
 - `InstanceAuthority`: `['instance-authority', instance_pubkey]`
-
-## Treasury Vaults
-
-- Per instance + mint token account authority = `InstanceAuthority`
-- Token account derivation seed recommendation:
-  - `['treasury-vault', instance_pubkey, mint_pubkey]`
-
-## Global Liquidity Vault (USDT)
-
-- Authority PDA: `['liquidity-authority']`
-- USDT vault token account: `['global-liquidity-vault', usdt_mint_pubkey]`
-
-## Ticket
-
+- `TreasuryVault`: `['treasury-vault', instance_pubkey, mint_pubkey]`
+- `LiquidityAuthority`: `['liquidity-authority']`
+- `GlobalLiquidityVaultUSDT`: `['global-liquidity-vault', usdt_mint_pubkey]`
 - `TicketRecord`: `['ticket', instance_pubkey, ticket_id_le_bytes]`
-
-## Settlement Receipt
-
 - `SettlementReceipt`: `['settlement', settlement_id]`
 
-`settlement_id` is globally unique. Do not namespace by instance to avoid accidental replay across instances.
+## State Transitions
 
-## Status Transition Rules
-
-## InstanceStatus
+### InstanceStatus
 
 - `active -> paused`
 - `paused -> active`
 - `active -> game_over`
 - `paused -> game_over`
-- No transition out of `game_over`.
+- `game_over` is terminal
 
-## TicketStatus
+### TicketStatus
 
 - `active -> paid`
 - `active -> refunded`
 - `active -> forfeited`
-- Terminal states are final and immutable.
+- Terminal states are immutable
 
-## Schema Versioning
+## Invariants
 
-- Every main account includes a `program_version` or implicit discriminator versioning policy.
-- Backward-compatible extension rule:
-  - append fields only
-  - never reorder existing fields
-  - gate new behavior by version checks
+- Principal can leave treasury only through payout/forfeit settlement.
+- Refunds must source from global USDT liquidity vault.
+- Beneficiary for payout/refund must equal `ticket.owner`.
+- Settlement ID is globally unique and consumed once.
+- Pause blocks all money-moving instructions.
+
+## Versioning Rule
+
+- Append-only account field evolution.
+- No reordering existing fields.
+- Guard new behavior with `program_version` checks.

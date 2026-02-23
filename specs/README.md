@@ -2,6 +2,22 @@
 
 This folder contains the production-ready specification set for spec-driven development.
 
+## Spec-Kit Workflow
+
+Spec-kit scripts expect feature folders in the form `specs/###-feature-name/` with:
+
+- `spec.md`
+- `plan.md`
+- `tasks.md`
+
+Active sequence:
+
+- `specs/001-gaming-stars-foundation/` (smart contracts first)
+- `specs/002-backend-orchestration/` (backend second)
+- `specs/003-frontend-app/` (frontend third)
+
+See `specs/SEQUENCE.md` for execution order.
+
 ## Purpose
 
 Define a decision-complete contract specification so implementation can proceed without product or architecture ambiguity.
