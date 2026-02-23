@@ -6,12 +6,6 @@ This folder contains the production-ready specification set for spec-driven deve
 
 Define a decision-complete contract specification so implementation can proceed without product or architecture ambiguity.
 
-## Canonical Inputs
-
-- Product requirements: `GamingStar.md`
-- Insurance model notes: `docs/insurance.md`
-- Technical notes: `docs/tech-notes.md`
-
 ## Locked Decisions
 
 - Queue/referral computation is backend-owned.
