@@ -1,0 +1,22 @@
+# Anchor
+.anchor
+target
+test-ledger
+**/*.rs.bk
+
+# Node.js
+node_modules
+.yarn
+
+# Specific files
+.DS_Store
+.idea
+keypairs/
+
+# AI
+.claude
+CLAUDE.md
+
+!tsconfig.json
+!package.json
+!package-lock.json
