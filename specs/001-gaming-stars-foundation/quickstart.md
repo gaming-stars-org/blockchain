@@ -18,6 +18,7 @@ Run a deterministic smoke path for entry, settlement, security, and ops controls
    - `ticket_price`
    - `entry_fee`
    - `insurance_premium`
+   - `max_insured_tickets`
    - accepted mints (`USDT`, `USDC` as needed)
 3. Top up global liquidity vault from master wallet.
 4. Execute paid ticket entry (insured=false).
@@ -30,6 +31,7 @@ Run a deterministic smoke path for entry, settlement, security, and ops controls
 11. Freeze instance and confirm blocked money-moving instructions.
 12. Unfreeze and confirm operations resume.
 13. Set game over and confirm buy is blocked but settlement cleanup works.
+14. Fill insured entries until `max_insured_tickets` is reached, then verify next insured entry fails while non-insured entry still succeeds.
 
 ## Expected Results
 

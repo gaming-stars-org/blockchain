@@ -14,6 +14,7 @@
 
 - [ ] Implement deterministic `settlement_id` generator
 - [ ] Implement pre-submit validators
+- [ ] Implement insured-cap pre-check via on-chain `GameInstance` counters
 - [ ] Implement idempotency store and conflict behavior
 - [ ] Implement chain submit + confirmation service
 - [ ] Implement on-chain error mapper
@@ -28,6 +29,7 @@
 ## Phase 4 Observability
 
 - [ ] Add metrics (fail ratio, duplicate attempts, cosigner failures)
+- [ ] Add insured-cap rejection metric and alert
 - [ ] Add structured logs with correlation keys
 - [ ] Add alerts and runbook links
 

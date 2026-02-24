@@ -29,39 +29,40 @@
 - [ ] T016 [P] Add operator cosigner negative tests in `tests/adversarial/buy-ticket-cosigner.spec.ts`
 - [ ] T017 [P] Add sponsored+insured and payer-authority negative tests in `tests/adversarial/buy-ticket-sponsored.spec.ts`
 - [ ] T018 [P] Add insured premium/refund mint validation tests (`USDT`,`USDC`) in `tests/adversarial/insurance-mint.spec.ts`
-- [ ] T019 Implement `initialize_factory`
-- [ ] T020 Implement `add_admin` + `remove_admin`
-- [ ] T021 Implement `update_global_wallets`
-- [ ] T022 Implement `deploy_instance`
-- [ ] T023 Implement `freeze_instance` + `unfreeze_instance`
-- [ ] T024 Implement `buy_ticket`
+- [ ] T019 [P] Add insured-cap limit tests (exact boundary + overflow attempt) in `tests/adversarial/insured-cap.spec.ts`
+- [ ] T020 Implement `initialize_factory`
+- [ ] T021 Implement `add_admin` + `remove_admin`
+- [ ] T022 Implement `update_global_wallets`
+- [ ] T023 Implement `deploy_instance` with `max_insured_tickets`
+- [ ] T024 Implement `freeze_instance` + `unfreeze_instance`
+- [ ] T025 Implement `buy_ticket` insured-cap guard and `insured_tickets_count` increment
 
 ## Phase 4: US2 Settlement and Replay (P2)
 
-- [ ] T025 [P] Add `settle_payout` tests in `tests/contract/settle-payout.spec.ts`
-- [ ] T026 [P] Add `settle_refund` tests in `tests/contract/settle-refund.spec.ts`
-- [ ] T027 [P] Add dual-mint global liquidity refund tests (`USDT`,`USDC`) in `tests/contract/settle-refund-dual-mint.spec.ts`
-- [ ] T028 [P] Add `settle_forfeit` tests in `tests/contract/settle-forfeit.spec.ts`
-- [ ] T029 [P] Add replay and beneficiary mismatch negatives in `tests/adversarial/replay-beneficiary.spec.ts`
-- [ ] T030 [P] Add batch parity tests in `tests/integration/settle-batch.spec.ts`
-- [ ] T031 Implement `topup_global_liquidity`
-- [ ] T032 Implement `settle_payout`
-- [ ] T033 Implement `settle_refund`
-- [ ] T034 Implement `settle_forfeit`
-- [ ] T035 Implement `settle_users_batch`
+- [ ] T026 [P] Add `settle_payout` tests in `tests/contract/settle-payout.spec.ts`
+- [ ] T027 [P] Add `settle_refund` tests in `tests/contract/settle-refund.spec.ts`
+- [ ] T028 [P] Add dual-mint global liquidity refund tests (`USDT`,`USDC`) in `tests/contract/settle-refund-dual-mint.spec.ts`
+- [ ] T029 [P] Add `settle_forfeit` tests in `tests/contract/settle-forfeit.spec.ts`
+- [ ] T030 [P] Add replay and beneficiary mismatch negatives in `tests/adversarial/replay-beneficiary.spec.ts`
+- [ ] T031 [P] Add batch parity tests in `tests/integration/settle-batch.spec.ts`
+- [ ] T032 Implement `topup_global_liquidity`
+- [ ] T033 Implement `settle_payout`
+- [ ] T034 Implement `settle_refund`
+- [ ] T035 Implement `settle_forfeit`
+- [ ] T036 Implement `settle_users_batch`
 
 ## Phase 5: US3 Operational Safety (P3)
 
-- [ ] T036 [P] Add pause matrix tests in `tests/integration/pause-matrix.spec.ts`
-- [ ] T037 [P] Add game-over behavior tests in `tests/integration/game-over.spec.ts`
-- [ ] T038 [P] Add operator rotation regression tests in `tests/adversarial/operator-rotation.spec.ts`
-- [ ] T039 Implement `set_game_over`
+- [ ] T037 [P] Add pause matrix tests in `tests/integration/pause-matrix.spec.ts`
+- [ ] T038 [P] Add game-over behavior tests in `tests/integration/game-over.spec.ts`
+- [ ] T039 [P] Add operator rotation regression tests in `tests/adversarial/operator-rotation.spec.ts`
+- [ ] T040 Implement `set_game_over`
 
 ## Phase 6: Finalization
 
-- [ ] T040 Run full localnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
-- [ ] T041 Run devnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
-- [ ] T042 Final docs consistency check against `contracts/onchain-instructions.md`
+- [ ] T041 Run full localnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
+- [ ] T042 Run devnet suite and record results in `specs/001-gaming-stars-foundation/quickstart.md`
+- [ ] T043 Final docs consistency check against `contracts/onchain-instructions.md`
 
 ## Execution Order
 

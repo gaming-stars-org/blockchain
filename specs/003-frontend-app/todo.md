@@ -15,12 +15,14 @@
 - [ ] Implement paid entry flow
 - [ ] Implement sponsored entry flow
 - [ ] Implement insured option UX validation
+- [ ] Implement insured-cap reached state (toggle disabled + inline reason)
 
 ## Phase 3 Status UX
 
 - [ ] Implement ticket lifecycle timeline
 - [ ] Show payout/refund/forfeit outcomes
 - [ ] Render backend/on-chain error classes clearly
+- [ ] Add dedicated copy for insured-cap rejection
 
 ## Phase 4 Admin/Ops UX
 

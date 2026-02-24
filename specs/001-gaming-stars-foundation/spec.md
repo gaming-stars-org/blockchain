@@ -20,6 +20,7 @@ As a player and operations team, ticket entry must be strictly authorized and fu
 1. **Given** active instance and accepted mint, **When** paid entry uses user signer + operator co-signer, **Then** principal goes to treasury and fee goes to dev wallet ATA.
 2. **Given** sponsored entry with `insured=true`, **When** `buy_ticket` executes, **Then** it fails before transfer.
 3. **Given** missing/wrong operator signer, **When** `buy_ticket` executes, **Then** it fails before transfer.
+4. **Given** insured cap is reached for instance, **When** `buy_ticket(insured=true)` executes, **Then** it fails before transfer.
 
 ---
 
@@ -59,6 +60,7 @@ As operators, we need freeze/unfreeze/game-over controls for incident handling.
 - Entry mint not in `accepted_mints`.
 - `entry_total_amount` mismatch.
 - Sponsored payer not operator.
+- Insured cap reached during burst traffic.
 - Beneficiary not equal to `ticket.owner` for payout/refund.
 - Wrong vault passed in settlement leg.
 - Duplicate settlement IDs in batch.
@@ -76,12 +78,14 @@ As operators, we need freeze/unfreeze/game-over controls for incident handling.
 - **FR-007**: `buy_ticket` MUST enforce `paid=user` and `sponsored=operator` payer mapping.
 - **FR-008**: `buy_ticket` MUST reject `sponsored + insured`.
 - **FR-009**: `buy_ticket` MUST enforce exact amount checks and atomic split.
-- **FR-010**: Settlement instructions MUST enforce beneficiary ownership and vault consistency.
-- **FR-011**: Settlement MUST be idempotent via unique `SettlementReceipt` PDA.
-- **FR-012**: Pause MUST block all money-moving instructions.
-- **FR-013**: Game-over MUST block new entries and allow settlement cleanup.
-- **FR-014**: Contract MUST emit canonical events and return canonical error codes.
-- **FR-015**: No owner/admin path MAY drain principal directly from treasury.
+- **FR-010**: `buy_ticket` MUST reject insured entry when `insured_tickets_count >= max_insured_tickets`.
+- **FR-011**: Settlement instructions MUST enforce beneficiary ownership and vault consistency.
+- **FR-012**: Settlement MUST be idempotent via unique `SettlementReceipt` PDA.
+- **FR-013**: Pause MUST block all money-moving instructions.
+- **FR-014**: Game-over MUST block new entries and allow settlement cleanup.
+- **FR-015**: Contract MUST emit canonical events and return canonical error codes.
+- **FR-016**: No owner/admin path MAY drain principal directly from treasury.
+- **FR-017**: Backend MUST pre-check insured capacity and reject entry requests when no insured slots remain.
 
 ### Key Entities *(include if feature involves data)*
 

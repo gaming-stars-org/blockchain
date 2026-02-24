@@ -35,7 +35,8 @@ Ops team can detect signer/config errors and act with runbooks.
 - **FR-006**: Backend MUST expose API endpoints defined in `contracts/backend-openapi.yaml`.
 - **FR-007**: Backend MUST validate payer mapping and sponsorship policy before tx build.
 - **FR-008**: Backend MUST validate beneficiary and vault derivations before settlement submission.
-- **FR-009**: Backend MUST expose metrics for settlement failure, duplicate settlement attempts, and cosigner validation failures.
+- **FR-009**: Backend MUST enforce insured-cap pre-check using on-chain `max_insured_tickets` and `insured_tickets_count` before building insured entry tx.
+- **FR-010**: Backend MUST expose metrics for settlement failure, duplicate settlement attempts, cosigner validation failures, and insured-cap rejections.
 
 ## Success Criteria *(mandatory)*
 

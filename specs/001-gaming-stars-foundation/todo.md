@@ -27,8 +27,9 @@
 - [ ] Implement `update_global_wallets`
 - [ ] Implement `deploy_instance`
 - [ ] Implement `freeze_instance` / `unfreeze_instance`
-- [ ] Implement `buy_ticket`
+- [ ] Implement `buy_ticket` insured-cap guard (`max_insured_tickets` / `insured_tickets_count`)
 - [ ] Add happy/negative tests for entry and cosigner
+- [ ] Add insured-cap boundary and overflow negative tests
 
 ## Phase 4 Settlement (P2)
 

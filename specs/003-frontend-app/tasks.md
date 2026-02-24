@@ -11,12 +11,14 @@
 - [ ] T004 Implement paid ticket entry flow
 - [ ] T005 Implement sponsored ticket entry flow
 - [ ] T006 Implement insured option UX and validation
+- [ ] T006a Implement insured-cap reached UX state (disable insured toggle + show reason)
 
 ## Phase 3: Status and History
 
 - [ ] T007 Implement ticket status timeline UI
 - [ ] T008 Implement settlement result and tx reference views
 - [ ] T009 Implement error-state rendering for backend/on-chain failures
+- [ ] T009a Map insured-cap backend error to stable user-facing copy
 
 ## Phase 4: Admin/Ops UI
 

@@ -10,7 +10,7 @@
   - Signer: owner
 - `update_global_wallets(new_dev_wallet?, new_master_wallet?, new_operator_wallet?)`
   - Signer: owner
-- `deploy_instance(instance_id, ticket_price, entry_fee, insurance_premium, payout_ratio_num, payout_ratio_den, game_duration_secs, user_ttl_secs, accepted_mints)`
+- `deploy_instance(instance_id, ticket_price, entry_fee, insurance_premium, max_insured_tickets, payout_ratio_num, payout_ratio_den, game_duration_secs, user_ttl_secs, accepted_mints)`
   - Signer: owner or admin
 - `freeze_instance(instance_id)`
   - Signer: owner or admin
@@ -30,6 +30,8 @@
     - entry amount exactness
     - entry-mode payer authority mapping
     - sponsored cannot be insured
+    - if `insured=true`, require `insured_tickets_count < max_insured_tickets`
+    - increment `insured_tickets_count` only on successful insured entry
     - entry mint accepted by instance
     - insured entries require insurance mint in supported set (`USDT`, `USDC`)
 
@@ -72,3 +74,4 @@ All settlement paths require:
 - `InvalidEntryMode`
 - `InvalidPayerAuthority`
 - `SponsoredInsuranceNotAllowed`
+- `MaxInsuredTicketsReached`

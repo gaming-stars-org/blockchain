@@ -35,6 +35,9 @@ Define a decision-complete contract specification so implementation can proceed 
 - `buy_ticket` supports `paid` and `sponsored` modes.
 - Promo/free code lifecycle is backend-only (off-chain); contract does not store or validate code usage counters.
 - In `sponsored` mode, payment is taken from operator-controlled sponsor funds; `insured` is not allowed in sponsored mode.
+- Maximum insured deposits per instance is bounded by config:
+  - backend enforces product policy pre-checks
+  - contract enforces hard guard via instance-level counter + max limit
 - Global USDT liquidity vault is shared across instances and is used for insured refunds and optional payout top-up legs.
 
 ## Spec Reading Order

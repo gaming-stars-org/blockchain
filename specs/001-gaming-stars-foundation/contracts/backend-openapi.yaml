@@ -122,6 +122,9 @@ components:
           type: string
         insured:
           type: boolean
+          description: >
+            If true, backend must validate remaining insured capacity and contract
+            will reject when instance insured cap is reached.
         entry_total_amount:
           type: string
           pattern: '^[0-9]+$'

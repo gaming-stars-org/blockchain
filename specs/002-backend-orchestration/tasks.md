@@ -10,6 +10,7 @@
 
 - [ ] T004 Implement settlement ID generator
 - [ ] T005 Implement pre-submit validators for entry and settlement
+- [ ] T005a Implement insured-cap validator (`insured_tickets_count < max_insured_tickets`) using on-chain `GameInstance` reads
 - [ ] T006 Implement idempotency persistence and conflict handling
 - [ ] T007 Implement chain submission and confirmation service
 - [ ] T008 Implement canonical error mapper
@@ -17,6 +18,7 @@
 ## Phase 3: APIs
 
 - [ ] T009 Implement `/v1/entries/submit`
+- [ ] T009a Return deterministic validation error for insured-cap reached
 - [ ] T010 Implement `/v1/settlements/payout`
 - [ ] T011 Implement `/v1/settlements/refund`
 - [ ] T012 Implement `/v1/settlements/forfeit`

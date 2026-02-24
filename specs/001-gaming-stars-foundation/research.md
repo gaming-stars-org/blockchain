@@ -54,6 +54,12 @@ Lock technical decisions that remove implementation ambiguity before coding.
 - Rationale: Required for forensic audit and API observability.
 - Tradeoff: Slightly higher implementation overhead.
 
+### 9. Max Insured Deposits Guard
+
+- Decision: Use hybrid enforcement for max insured deposits per instance.
+- Rationale: Backend keeps product flexibility; on-chain guard protects funds from backend bugs or race conditions.
+- Tradeoff: Requires maintaining two counters/policy checks (backend projection + on-chain source of truth).
+
 ## Rejected Alternatives
 
 - Fully on-chain queue/referral engine: rejected due to complexity and operational inflexibility.

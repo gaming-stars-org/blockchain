@@ -15,7 +15,7 @@ Build backend API and transaction orchestration layer against finalized smart-co
 **Testing**: Vitest/Jest + integration with localnet/devnet  
 **Target Platform**: Linux service  
 **Project Type**: Backend web-service  
-**Constraints**: Deterministic payload handling, explicit error mapping, no hidden retries  
+**Constraints**: Deterministic payload handling, explicit error mapping, no hidden retries, insured-cap pre-check against on-chain instance state  
 **Scale/Scope**: Production settlement and entry orchestration
 
 ## Dependencies

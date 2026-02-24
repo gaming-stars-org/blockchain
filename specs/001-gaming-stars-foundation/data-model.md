@@ -22,6 +22,8 @@
 - `ticket_price: u64`
 - `entry_fee: u64`
 - `insurance_premium: u64`
+- `max_insured_tickets: u32`
+- `insured_tickets_count: u32`
 - `payout_ratio_num: u16`
 - `payout_ratio_den: u16`
 - `accepted_mints: Vec<Pubkey>`
@@ -99,6 +101,7 @@
 - Beneficiary for payout/refund must equal `ticket.owner`.
 - Settlement ID is globally unique and consumed once.
 - Pause blocks all money-moving instructions.
+- Insured entry is allowed only while `insured_tickets_count < max_insured_tickets`.
 
 ## Versioning Rule
 

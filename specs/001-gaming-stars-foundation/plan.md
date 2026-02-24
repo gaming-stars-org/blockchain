@@ -16,7 +16,7 @@ Implement production-grade Solana smart contracts for custody, entry authorizati
 **Target Platform**: Solana localnet/devnet/mainnet  
 **Project Type**: Smart-contract program  
 **Performance Goals**: No correctness regressions under retry and adversarial tests  
-**Constraints**: Atomic transfers, strict role checks, deterministic PDA derivation  
+**Constraints**: Atomic transfers, strict role checks, deterministic PDA derivation, insured-cap hard guard on-chain  
 **Scale/Scope**: Multi-instance custody with shared global role wallets
 
 ## Constitution Check

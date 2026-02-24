@@ -32,6 +32,7 @@ Admin can see instance paused/game-over state and action availability.
 - **FR-003**: Frontend MUST show ticket lifecycle states (`active`, `paid`, `refunded`, `forfeited`).
 - **FR-004**: Frontend MUST disable blocked actions for paused/game-over states.
 - **FR-005**: Frontend MUST provide transaction and settlement references for support/debugging.
+- **FR-006**: Frontend MUST render deterministic insured-cap reached message and block insured toggle when backend reports zero remaining insured slots.
 
 ## Success Criteria *(mandatory)*
 
