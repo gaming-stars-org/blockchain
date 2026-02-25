@@ -1,0 +1,7 @@
+[simnet]
+name = "gaming-stars-test"
+
+[[simnet.plan.deploy]]
+name = "gaming_stars"
+program_id = "5X2xYZ1oAebuc8NNMHa3LNgATow8QoFPuFraji93psJp"
+binary_path = "target/deploy/gaming_stars.so"

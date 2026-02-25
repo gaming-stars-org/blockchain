@@ -1,0 +1,23 @@
+---
+name: gaming-stars
+id: gaming-stars
+runbooks:
+  - name: deployment
+    description: Deploy gaming_stars program
+    location: runbooks/deployment
+environments:
+  localnet:
+      network_id: localnet
+      rpc_api_url: http://127.0.0.1:8899
+  devnet:
+      network_id: devnet
+      rpc_api_url: https://api.devnet.solana.com
+      payer_keypair_json: ~/.config/solana/id.json
+      authority_keypair_json: ~/.config/solana/id.json
+  mainnet:
+      network_id: mainnet
+      # Replace with your mainnet RPC provider URL
+      rpc_api_url: https://mainnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY
+      # Replace with paths to your keypair files
+      payer_keypair_json: ./keypairs/authority/your-keypair.json
+      authority_keypair_json: ./keypairs/authority/your-keypair.json

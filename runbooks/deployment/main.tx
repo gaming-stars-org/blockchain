@@ -1,0 +1,16 @@
+################################################################
+# Manage gaming-stars deployment through Crypto Infrastructure as Code
+################################################################
+
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+action "deploy_gaming_stars" "svm::deploy_program" {
+    description = "Deploy gaming_stars program"
+    program = svm::get_program_from_anchor_project("gaming_stars")
+    authority = signer.authority
+    payer = signer.payer
+    instant_surfnet_deployment = true
+}
