@@ -1,0 +1,98 @@
+import { BN } from "@coral-xyz/anchor";
+import { SystemProgram } from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  settlementReceiptPda,
+  settlementSeed,
+  setupBuyTicketFixture,
+  ticketPda,
+  tokenAmount,
+} from "../helpers/buy-ticket-fixture";
+
+describe("settle_forfeit", () => {
+  it("moves treasury funds across multiple legs and marks forfeited", async () => {
+    const fx = await setupBuyTicketFixture();
+
+    for (const mintIndex of [0, 1]) {
+      await fx.program.methods
+        .buyTicket({
+          entryMode: { paid: {} },
+          entryMint: fx.mints[mintIndex].publicKey,
+          insured: false,
+          entryTotalAmount: new BN(fx.ticketPrice + fx.entryFee),
+          insurancePremiumAmount: new BN(0),
+          externalRef: null,
+        } as any)
+        .accounts({
+          user: fx.user.publicKey,
+          operator: fx.operator.publicKey,
+          payerAuthority: fx.user.publicKey,
+          factoryState: fx.factoryStatePda,
+          instance: fx.instancePda,
+          ticketRecord: ticketPda(fx.program.programId, fx.instancePda, mintIndex),
+          entryMint: fx.mints[mintIndex].publicKey,
+          payerEntryTokenAccount: fx.userTokenAccounts[mintIndex],
+          treasuryVault: fx.treasuryVaults[mintIndex],
+          devWalletTokenAccount: fx.devTokenAccounts[mintIndex],
+          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        } as any)
+        .signers([fx.user, fx.operator])
+        .rpc();
+    }
+
+    const dev0Before = await tokenAmount(fx.client, fx.devTokenAccounts[0]);
+    const dev1Before = await tokenAmount(fx.client, fx.devTokenAccounts[1]);
+
+    const settlementId = settlementSeed(41);
+    await fx.program.methods
+      .settleForfeit({
+        settlementId,
+        instanceId: fx.instanceId,
+        ticketId: new BN(0),
+        legs: [
+          {
+            mint: fx.mints[0].publicKey,
+            amount: new BN(fx.ticketPrice),
+            sourceVault: fx.treasuryVaults[0],
+            destinationAta: fx.devTokenAccounts[0],
+          },
+          {
+            mint: fx.mints[1].publicKey,
+            amount: new BN(fx.ticketPrice),
+            sourceVault: fx.treasuryVaults[1],
+            destinationAta: fx.devTokenAccounts[1],
+          },
+        ],
+        resolutionKind: { loss: {} },
+        payloadHash: settlementId,
+      } as any)
+      .accounts({
+        operator: fx.operator.publicKey,
+        factoryState: fx.factoryStatePda,
+        instance: fx.instancePda,
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        settlementReceipt: settlementReceiptPda(fx.program.programId, 41),
+        instanceAuthority: fx.instanceAuthorityPda,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      } as any)
+      .remainingAccounts([
+        { pubkey: fx.mints[0].publicKey, isSigner: false, isWritable: false },
+        { pubkey: fx.treasuryVaults[0], isSigner: false, isWritable: true },
+        { pubkey: fx.devTokenAccounts[0], isSigner: false, isWritable: true },
+        { pubkey: fx.mints[1].publicKey, isSigner: false, isWritable: false },
+        { pubkey: fx.treasuryVaults[1], isSigner: false, isWritable: true },
+        { pubkey: fx.devTokenAccounts[1], isSigner: false, isWritable: true },
+      ])
+      .signers([fx.operator])
+      .rpc();
+
+    expect(await tokenAmount(fx.client, fx.devTokenAccounts[0])).toBe(
+      dev0Before + BigInt(fx.ticketPrice)
+    );
+    expect(await tokenAmount(fx.client, fx.devTokenAccounts[1])).toBe(
+      dev1Before + BigInt(fx.ticketPrice)
+    );
+  });
+});
