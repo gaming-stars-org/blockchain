@@ -15,7 +15,6 @@
 - Deploy via Surfpool runbook (localnet/devnet/mainnet): `surfpool run deployment --env localnet|devnet|mainnet`
 
 ## Surfpool IaC
-- Tests stay on LiteSVM/Jest.
 - Copy config: `cp txtx.yml.example txtx.yml`
 - Start local Surfpool: `surfpool start --no-tui`
 - List runbooks: `surfpool ls`
