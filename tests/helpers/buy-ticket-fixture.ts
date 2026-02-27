@@ -110,6 +110,32 @@ export async function setupBuyTicketFixture(
   const acceptedMints = mints.map((m) => m.publicKey);
   const insuranceMints = insuranceMintIndexes.map((i) => mints[i].publicKey);
 
+  const [instanceAuthorityPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("instance-authority"), instancePda.toBuffer()],
+    program.programId
+  );
+  const [liquidityAuthorityPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("liquidity-authority")],
+    program.programId
+  );
+  const treasuryVaults = mints.map((mint) =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("treasury-vault"), instancePda.toBuffer(), mint.publicKey.toBuffer()],
+      program.programId
+    )[0]
+  );
+  const treasuryVaultPda = treasuryVaults[0];
+  const globalLiquidityVaults = mints.map((mint) =>
+    PublicKey.findProgramAddressSync(
+      [Buffer.from("global-liquidity-vault"), mint.publicKey.toBuffer()],
+      program.programId
+    )[0]
+  );
+
+  for (const mint of mints) {
+    setMintAccount(client, mint.publicKey, owner.publicKey, 6, BigInt(10_000_000));
+  }
+
   await program.methods
     .deployInstance({
       instanceId: instanceId,
@@ -128,41 +154,24 @@ export async function setupBuyTicketFixture(
       authority: owner.publicKey,
       factoryState: factoryStatePda,
       instance: instancePda,
+      instanceAuthority: instanceAuthorityPda,
+      liquidityAuthority: liquidityAuthorityPda,
+      tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: SystemProgram.programId,
     } as any)
+    .remainingAccounts(
+      mints.flatMap((mint, i) => [
+        { pubkey: mint.publicKey, isSigner: false, isWritable: false },
+        { pubkey: treasuryVaults[i], isSigner: false, isWritable: true },
+        { pubkey: globalLiquidityVaults[i], isSigner: false, isWritable: true },
+      ])
+    )
     .signers([owner])
     .rpc();
-
-  for (const mint of mints) {
-    setMintAccount(client, mint.publicKey, owner.publicKey, 6, BigInt(10_000_000));
-  }
-
-  const [instanceAuthorityPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("instance-authority"), instancePda.toBuffer()],
-    program.programId
-  );
-  const [liquidityAuthorityPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("liquidity-authority")],
-    program.programId
-  );
 
   const [ticketRecordPda] = PublicKey.findProgramAddressSync(
     [Buffer.from("ticket"), instancePda.toBuffer(), u64le(0)],
     program.programId
-  );
-
-  const treasuryVaults = mints.map((mint) =>
-    PublicKey.findProgramAddressSync(
-      [Buffer.from("treasury-vault"), instancePda.toBuffer(), mint.publicKey.toBuffer()],
-      program.programId
-    )[0]
-  );
-  const treasuryVaultPda = treasuryVaults[0];
-  const globalLiquidityVaults = mints.map((mint) =>
-    PublicKey.findProgramAddressSync(
-      [Buffer.from("global-liquidity-vault"), mint.publicKey.toBuffer()],
-      program.programId
-    )[0]
   );
 
   const masterTokenAccounts: PublicKey[] = [];
@@ -180,17 +189,11 @@ export async function setupBuyTicketFixture(
     setTokenAccount(client, userAta, mint.publicKey, user.publicKey, BigInt(2_000_000));
     setTokenAccount(client, operatorAta, mint.publicKey, operator.publicKey, BigInt(2_000_000));
     setTokenAccount(client, devAta, mint.publicKey, devWallet.publicKey, BigInt(0));
-    setTokenAccount(client, globalLiquidityVaults[i], mint.publicKey, liquidityAuthorityPda, BigInt(0));
-
     masterTokenAccounts.push(masterAta);
     userTokenAccounts.push(userAta);
     operatorTokenAccounts.push(operatorAta);
     devTokenAccounts.push(devAta);
   }
-
-  treasuryVaults.forEach((vault, i) => {
-    setTokenAccount(client, vault, mints[i].publicKey, instanceAuthorityPda, BigInt(0));
-  });
 
   return {
     program,

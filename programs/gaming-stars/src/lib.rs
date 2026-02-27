@@ -45,7 +45,10 @@ pub mod gaming_stars {
         wallets::update_global_wallets_handler(ctx, args)
     }
 
-    pub fn deploy_instance(ctx: Context<DeployInstance>, args: DeployInstanceArgs) -> Result<()> {
+    pub fn deploy_instance<'info>(
+        ctx: Context<'_, '_, '_, 'info, DeployInstance<'info>>,
+        args: DeployInstanceArgs,
+    ) -> Result<()> {
         deploy_handler(ctx, args)
     }
 
@@ -66,6 +69,14 @@ pub mod gaming_stars {
         args: TopupGlobalLiquidityArgs,
     ) -> Result<()> {
         topup_global_liquidity_handler(ctx, args)
+    }
+
+    pub fn init_global_liquidity_vault(ctx: Context<InitGlobalLiquidityVault>) -> Result<()> {
+        init_global_liquidity_vault_handler(ctx)
+    }
+
+    pub fn init_treasury_vault(ctx: Context<InitTreasuryVault>) -> Result<()> {
+        init_treasury_vault_handler(ctx)
     }
 
     pub fn settle_payout<'info>(

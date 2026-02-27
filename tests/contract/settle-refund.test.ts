@@ -32,6 +32,8 @@ describe("settle_refund", () => {
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],
         treasuryVault: fx.treasuryVaults[0],
+        globalLiquidityVault: fx.globalLiquidityVaults[0],
+        liquidityAuthority: fx.liquidityAuthorityPda,
         devWalletTokenAccount: fx.devTokenAccounts[0],
         tokenProgram: TOKEN_PROGRAM_ID,
         systemProgram: SystemProgram.programId,

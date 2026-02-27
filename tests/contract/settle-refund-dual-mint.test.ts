@@ -36,6 +36,8 @@ describe("settle_refund dual mint", () => {
           entryMint: fx.mints[mintIndex].publicKey,
           payerEntryTokenAccount: fx.userTokenAccounts[mintIndex],
           treasuryVault: fx.treasuryVaults[mintIndex],
+          globalLiquidityVault: fx.globalLiquidityVaults[mintIndex],
+          liquidityAuthority: fx.liquidityAuthorityPda,
           devWalletTokenAccount: fx.devTokenAccounts[mintIndex],
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,

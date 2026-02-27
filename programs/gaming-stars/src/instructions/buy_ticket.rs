@@ -45,6 +45,10 @@ pub struct BuyTicket<'info> {
     #[account(mut)]
     pub treasury_vault: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
+    pub global_liquidity_vault: InterfaceAccount<'info, TokenAccount>,
+    /// CHECK: validated against PDA derivation and token owner checks.
+    pub liquidity_authority: UncheckedAccount<'info>,
+    #[account(mut)]
     pub dev_wallet_token_account: InterfaceAccount<'info, TokenAccount>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
@@ -70,6 +74,11 @@ pub fn buy_ticket_handler(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Resul
     );
     require_keys_eq!(
         ctx.accounts.treasury_vault.mint,
+        args.entry_mint,
+        GamingStarsError::InvalidMint
+    );
+    require_keys_eq!(
+        ctx.accounts.global_liquidity_vault.mint,
         args.entry_mint,
         GamingStarsError::InvalidMint
     );
@@ -123,11 +132,11 @@ pub fn buy_ticket_handler(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Resul
         );
     }
 
-    let treasury_amount = instance
+    let principal_plus_insurance = instance
         .ticket_price
         .checked_add(args.insurance_premium_amount)
         .ok_or(GamingStarsError::ArithmeticOverflow)?;
-    let expected_total = treasury_amount
+    let expected_total = principal_plus_insurance
         .checked_add(instance.entry_fee)
         .ok_or(GamingStarsError::ArithmeticOverflow)?;
 
@@ -142,6 +151,23 @@ pub fn buy_ticket_handler(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Resul
         &args.entry_mint,
         &ctx.accounts.treasury_vault.key(),
     )?;
+    vaults::assert_global_liquidity_vault(
+        ctx.program_id,
+        &args.entry_mint,
+        &ctx.accounts.global_liquidity_vault.key(),
+    )?;
+    let (expected_liquidity_authority, _) =
+        crate::state::derive_liquidity_authority(ctx.program_id);
+    require_keys_eq!(
+        expected_liquidity_authority,
+        ctx.accounts.liquidity_authority.key(),
+        GamingStarsError::VaultMismatch
+    );
+    require_keys_eq!(
+        ctx.accounts.global_liquidity_vault.owner,
+        ctx.accounts.liquidity_authority.key(),
+        GamingStarsError::VaultMismatch
+    );
     require_keys_eq!(
         ctx.accounts.dev_wallet_token_account.owner,
         ctx.accounts.factory_state.dev_wallet,
@@ -161,9 +187,26 @@ pub fn buy_ticket_handler(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Resul
             ctx.accounts.token_program.to_account_info(),
             transfer_to_treasury,
         ),
-        treasury_amount,
+        instance.ticket_price,
         decimals,
     )?;
+
+    if args.insured {
+        let transfer_to_glv = TransferChecked {
+            mint: ctx.accounts.entry_mint.to_account_info(),
+            from: ctx.accounts.payer_entry_token_account.to_account_info(),
+            to: ctx.accounts.global_liquidity_vault.to_account_info(),
+            authority: ctx.accounts.payer_authority.to_account_info(),
+        };
+        transfer_checked(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                transfer_to_glv,
+            ),
+            args.insurance_premium_amount,
+            decimals,
+        )?;
+    }
 
     let transfer_to_dev = TransferChecked {
         mint: ctx.accounts.entry_mint.to_account_info(),

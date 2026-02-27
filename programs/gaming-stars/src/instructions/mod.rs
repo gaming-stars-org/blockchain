@@ -5,6 +5,7 @@ pub mod initialize_factory;
 pub mod instances;
 pub mod liquidity;
 pub mod settlements;
+pub mod vault_init;
 pub mod vaults;
 pub mod wallets;
 
@@ -15,5 +16,6 @@ pub use initialize_factory::*;
 pub use instances::*;
 pub use liquidity::*;
 pub use settlements::*;
+pub use vault_init::*;
 pub use vaults::*;
 pub use wallets::*;
