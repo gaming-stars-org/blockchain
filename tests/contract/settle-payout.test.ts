@@ -6,6 +6,7 @@ import {
   settlementSeed,
   setupBuyTicketFixture,
   ticketPda,
+  activeEntryPda,
   tokenAmount,
 } from "../helpers/buy-ticket-fixture";
 
@@ -13,7 +14,11 @@ describe("settle_payout", () => {
   it("moves treasury funds across multiple legs and writes receipt", async () => {
     const fx = await setupBuyTicketFixture();
 
-    for (const mintIndex of [0, 1]) {
+    const buyers = [
+      { user: fx.user, payerAta: fx.userTokenAccounts[0] },
+      { user: fx.operator, payerAta: fx.operatorTokenAccounts[1] },
+    ];
+    for (const [mintIndex, buyer] of buyers.entries()) {
       await fx.program.methods
         .buyTicket({
           entryMode: { paid: {} },
@@ -24,14 +29,15 @@ describe("settle_payout", () => {
           externalRef: null,
         } as any)
         .accounts({
-          user: fx.user.publicKey,
+          user: buyer.user.publicKey,
           operator: fx.operator.publicKey,
-          payerAuthority: fx.user.publicKey,
+          payerAuthority: buyer.user.publicKey,
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: ticketPda(fx.program.programId, fx.instancePda, mintIndex),
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           entryMint: fx.mints[mintIndex].publicKey,
-          payerEntryTokenAccount: fx.userTokenAccounts[mintIndex],
+          payerEntryTokenAccount: buyer.payerAta,
           treasuryVault: fx.treasuryVaults[mintIndex],
           globalLiquidityVault: fx.globalLiquidityVaults[mintIndex],
           liquidityAuthority: fx.liquidityAuthorityPda,
@@ -39,7 +45,7 @@ describe("settle_payout", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         } as any)
-        .signers([fx.user, fx.operator])
+        .signers(buyer.user.publicKey.equals(fx.operator.publicKey) ? [fx.operator] : [fx.user, fx.operator])
         .rpc();
     }
 
@@ -77,6 +83,7 @@ describe("settle_payout", () => {
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
         ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         settlementReceipt: settlementReceiptPda(fx.program.programId, 11),
         instanceAuthority: fx.instanceAuthorityPda,
         tokenProgram: TOKEN_PROGRAM_ID,

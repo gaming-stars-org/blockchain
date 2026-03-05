@@ -1,13 +1,17 @@
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
-import { setupBuyTicketFixture } from "../helpers/buy-ticket-fixture";
+import { activeEntryPda, setupBuyTicketFixture } from "../helpers/buy-ticket-fixture";
 
 describe("insured cap guard", () => {
   it("allows up to max insured tickets and rejects overflow", async () => {
     const fx = await setupBuyTicketFixture({ maxInsuredTickets: 2 });
 
-    for (const ticketId of [0, 1]) {
+    const buyers = [
+      { user: fx.user, payerAta: fx.userTokenAccounts[0] },
+      { user: fx.operator, payerAta: fx.operatorTokenAccounts[0] },
+    ];
+    for (const [ticketId, buyer] of buyers.entries()) {
       const ticketSeed = new BN(ticketId).toArrayLike(Buffer, "le", 8);
       const [ticketRecordPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("ticket"), fx.instancePda.toBuffer(), ticketSeed],
@@ -26,14 +30,15 @@ describe("insured cap guard", () => {
           externalRef: null,
         } as any)
         .accounts({
-          user: fx.user.publicKey,
+          user: buyer.user.publicKey,
           operator: fx.operator.publicKey,
-          payerAuthority: fx.user.publicKey,
+          payerAuthority: buyer.user.publicKey,
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: ticketRecordPda,
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           entryMint: fx.mints[0].publicKey,
-          payerEntryTokenAccount: fx.userTokenAccounts[0],
+          payerEntryTokenAccount: buyer.payerAta,
           treasuryVault: fx.treasuryVaultPda,
           globalLiquidityVault: fx.globalLiquidityVaults[0],
           liquidityAuthority: fx.liquidityAuthorityPda,
@@ -41,7 +46,7 @@ describe("insured cap guard", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         } as any)
-        .signers([fx.user, fx.operator])
+        .signers(buyer.user.publicKey.equals(fx.operator.publicKey) ? [fx.operator] : [fx.user, fx.operator])
         .rpc();
     }
 
@@ -67,14 +72,19 @@ describe("insured cap guard", () => {
           externalRef: null,
         } as any)
         .accounts({
-          user: fx.user.publicKey,
+          user: fx.masterWallet.publicKey,
           operator: fx.operator.publicKey,
-          payerAuthority: fx.user.publicKey,
+          payerAuthority: fx.masterWallet.publicKey,
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: overflowTicketPda,
+          activeEntry: activeEntryPda(
+            fx.program.programId,
+            fx.instancePda,
+            fx.masterWallet.publicKey
+          ),
           entryMint: fx.mints[0].publicKey,
-          payerEntryTokenAccount: fx.userTokenAccounts[0],
+          payerEntryTokenAccount: fx.masterTokenAccounts[0],
           treasuryVault: fx.treasuryVaultPda,
           globalLiquidityVault: fx.globalLiquidityVaults[0],
           liquidityAuthority: fx.liquidityAuthorityPda,
@@ -82,7 +92,7 @@ describe("insured cap guard", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         } as any)
-        .signers([fx.user, fx.operator])
+        .signers([fx.masterWallet, fx.operator])
         .rpc()
     ).rejects.toThrow();
   });

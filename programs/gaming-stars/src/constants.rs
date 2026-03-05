@@ -7,6 +7,7 @@ pub const TREASURY_VAULT_SEED: &[u8] = b"treasury-vault";
 pub const LIQUIDITY_AUTHORITY_SEED: &[u8] = b"liquidity-authority";
 pub const GLOBAL_LIQUIDITY_VAULT_SEED: &[u8] = b"global-liquidity-vault";
 pub const TICKET_RECORD_SEED: &[u8] = b"ticket";
+pub const ACTIVE_ENTRY_SEED: &[u8] = b"active-entry";
 pub const SETTLEMENT_RECEIPT_SEED: &[u8] = b"settlement";
 
 pub const PROGRAM_VERSION: u16 = 1;

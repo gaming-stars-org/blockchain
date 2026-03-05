@@ -4,11 +4,11 @@ use anchor_spl::token_interface::{
 };
 
 use crate::{
-    constants::{FACTORY_STATE_SEED, INSTANCE_SEED, TICKET_RECORD_SEED},
+    constants::{ACTIVE_ENTRY_SEED, FACTORY_STATE_SEED, INSTANCE_SEED, TICKET_RECORD_SEED},
     errors::GamingStarsError,
     events::TicketPurchased,
     instructions::{guards, vaults},
-    state::{EntryMode, FactoryState, GameInstance, TicketRecord, TicketStatus},
+    state::{ActiveEntry, EntryMode, FactoryState, GameInstance, TicketRecord, TicketStatus},
 };
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
@@ -39,6 +39,14 @@ pub struct BuyTicket<'info> {
         bump
     )]
     pub ticket_record: Account<'info, TicketRecord>,
+    #[account(
+        init,
+        payer = user,
+        space = ActiveEntry::SPACE,
+        seeds = [ACTIVE_ENTRY_SEED, instance.key().as_ref(), user.key().as_ref()],
+        bump
+    )]
+    pub active_entry: Account<'info, ActiveEntry>,
     pub entry_mint: InterfaceAccount<'info, Mint>,
     #[account(mut)]
     pub payer_entry_token_account: InterfaceAccount<'info, TokenAccount>,
@@ -248,6 +256,11 @@ pub fn buy_ticket_handler(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Resul
     ticket.resolution_kind = None;
     ticket.external_ref = args.external_ref;
     ticket.bump = ctx.bumps.ticket_record;
+
+    let active_entry = &mut ctx.accounts.active_entry;
+    active_entry.instance_id = instance.instance_id;
+    active_entry.owner = ctx.accounts.user.key();
+    active_entry.bump = ctx.bumps.active_entry;
 
     instance.next_ticket_id = instance
         .next_ticket_id

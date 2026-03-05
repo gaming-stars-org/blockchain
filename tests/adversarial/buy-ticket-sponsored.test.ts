@@ -1,7 +1,11 @@
 import { SystemProgram } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { BN } from "@coral-xyz/anchor";
-import { setupBuyTicketFixture, tokenAmount } from "../helpers/buy-ticket-fixture";
+import {
+  activeEntryPda,
+  setupBuyTicketFixture,
+  tokenAmount,
+} from "../helpers/buy-ticket-fixture";
 
 describe("buy_ticket sponsored and payer validation", () => {
   it("rejects sponsored + insured", async () => {
@@ -25,6 +29,7 @@ describe("buy_ticket sponsored and payer validation", () => {
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: fx.ticketRecordPda,
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
           entryMint: fx.mints[0].publicKey,
           payerEntryTokenAccount: fx.operatorTokenAccounts[0],
           treasuryVault: fx.treasuryVaultPda,
@@ -61,6 +66,7 @@ describe("buy_ticket sponsored and payer validation", () => {
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: fx.ticketRecordPda,
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
           entryMint: fx.mints[0].publicKey,
           payerEntryTokenAccount: fx.operatorTokenAccounts[0],
           treasuryVault: fx.treasuryVaultPda,

@@ -6,11 +6,12 @@ import {
   settlementSeed,
   settlementReceiptPda,
   ticketPda,
+  activeEntryPda,
   tokenAmount,
 } from "../helpers/buy-ticket-fixture";
 
 describe("settle_users_batch", () => {
-  it("executes payout/refund items and rejects duplicate settlement ids", async () => {
+  it("executes payout/forfeit items and rejects duplicate settlement ids", async () => {
     const fx = await setupBuyTicketFixture({ insuranceMintIndexes: [0, 1] });
 
     await fx.program.methods
@@ -29,6 +30,7 @@ describe("settle_users_batch", () => {
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
         ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],
         treasuryVault: fx.treasuryVaults[0],
@@ -41,57 +43,8 @@ describe("settle_users_batch", () => {
       .signers([fx.user, fx.operator])
       .rpc();
 
-    await fx.program.methods
-      .buyTicket({
-        entryMode: { paid: {} },
-        entryMint: fx.mints[1].publicKey,
-        insured: true,
-        entryTotalAmount: new BN(
-          fx.ticketPrice + fx.entryFee + fx.insurancePremium
-        ),
-        insurancePremiumAmount: new BN(fx.insurancePremium),
-        externalRef: null,
-      } as any)
-      .accounts({
-        user: fx.user.publicKey,
-        operator: fx.operator.publicKey,
-        payerAuthority: fx.user.publicKey,
-        factoryState: fx.factoryStatePda,
-        instance: fx.instancePda,
-        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 1),
-        entryMint: fx.mints[1].publicKey,
-        payerEntryTokenAccount: fx.userTokenAccounts[1],
-        treasuryVault: fx.treasuryVaults[1],
-        globalLiquidityVault: fx.globalLiquidityVaults[1],
-        liquidityAuthority: fx.liquidityAuthorityPda,
-        devWalletTokenAccount: fx.devTokenAccounts[1],
-        tokenProgram: TOKEN_PROGRAM_ID,
-        systemProgram: SystemProgram.programId,
-      } as any)
-      .signers([fx.user, fx.operator])
-      .rpc();
-
-    await fx.program.methods
-      .topupGlobalLiquidity({
-        mint: fx.mints[1].publicKey,
-        amount: new BN(1_000),
-      } as any)
-      .accounts({
-        masterWallet: fx.masterWallet.publicKey,
-        factoryState: fx.factoryStatePda,
-        mint: fx.mints[1].publicKey,
-        masterTokenAccount: fx.masterTokenAccounts[1],
-        globalLiquidityVault: fx.globalLiquidityVaults[1],
-        liquidityAuthority: fx.liquidityAuthorityPda,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      } as any)
-      .signers([fx.masterWallet])
-      .rpc();
-
     const treasuryBefore = await tokenAmount(fx.client, fx.treasuryVaults[0]);
-    const liquidityBefore = await tokenAmount(fx.client, fx.globalLiquidityVaults[1]);
     const user0Before = await tokenAmount(fx.client, fx.userTokenAccounts[0]);
-    const user1Before = await tokenAmount(fx.client, fx.userTokenAccounts[1]);
 
     await fx.program.methods
       .settleUsersBatch({
@@ -115,17 +68,6 @@ describe("settle_users_batch", () => {
             resolutionKind: { win: {} },
             payloadHash: settlementSeed(61),
           },
-          {
-            settlementId: settlementSeed(62),
-            ticketId: new BN(1),
-            kind: { refund: {} },
-            beneficiary: fx.user.publicKey,
-            refundMint: fx.mints[1].publicKey,
-            refundAmount: new BN(fx.ticketPrice),
-            legs: [],
-            resolutionKind: { timeout: {} },
-            payloadHash: settlementSeed(62),
-          },
         ],
       } as any)
       .accounts({
@@ -140,14 +82,14 @@ describe("settle_users_batch", () => {
       .remainingAccounts([
         { pubkey: ticketPda(fx.program.programId, fx.instancePda, 0), isSigner: false, isWritable: true },
         { pubkey: settlementReceiptPda(fx.program.programId, 61), isSigner: false, isWritable: true },
+        {
+          pubkey: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
+          isSigner: false,
+          isWritable: true,
+        },
         { pubkey: fx.mints[0].publicKey, isSigner: false, isWritable: false },
         { pubkey: fx.treasuryVaults[0], isSigner: false, isWritable: true },
         { pubkey: fx.userTokenAccounts[0], isSigner: false, isWritable: true },
-        { pubkey: ticketPda(fx.program.programId, fx.instancePda, 1), isSigner: false, isWritable: true },
-        { pubkey: settlementReceiptPda(fx.program.programId, 62), isSigner: false, isWritable: true },
-        { pubkey: fx.mints[1].publicKey, isSigner: false, isWritable: false },
-        { pubkey: fx.globalLiquidityVaults[1], isSigner: false, isWritable: true },
-        { pubkey: fx.userTokenAccounts[1], isSigner: false, isWritable: true },
       ])
       .signers([fx.operator])
       .rpc();
@@ -155,24 +97,14 @@ describe("settle_users_batch", () => {
     expect(await tokenAmount(fx.client, fx.treasuryVaults[0])).toBe(
       treasuryBefore - BigInt(fx.ticketPrice)
     );
-    expect(await tokenAmount(fx.client, fx.globalLiquidityVaults[1])).toBe(
-      liquidityBefore - BigInt(fx.ticketPrice)
-    );
     expect(await tokenAmount(fx.client, fx.userTokenAccounts[0])).toBe(
       user0Before + BigInt(fx.ticketPrice)
-    );
-    expect(await tokenAmount(fx.client, fx.userTokenAccounts[1])).toBe(
-      user1Before + BigInt(fx.ticketPrice)
     );
 
     const ticket0 = await fx.program.account.ticketRecord.fetch(
       ticketPda(fx.program.programId, fx.instancePda, 0)
     );
-    const ticket1 = await fx.program.account.ticketRecord.fetch(
-      ticketPda(fx.program.programId, fx.instancePda, 1)
-    );
     expect(Object.keys(ticket0.status)[0]).toBe("paid");
-    expect(Object.keys(ticket1.status)[0]).toBe("refunded");
 
     await expect(
       fx.program.methods

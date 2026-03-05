@@ -9,15 +9,15 @@ use anchor_spl::token_interface::{
 
 use crate::{
     constants::{
-        INSTANCE_AUTHORITY_SEED, INSTANCE_SEED, LIQUIDITY_AUTHORITY_SEED, SETTLEMENT_RECEIPT_SEED,
-        TICKET_RECORD_SEED,
+        ACTIVE_ENTRY_SEED, INSTANCE_AUTHORITY_SEED, INSTANCE_SEED, LIQUIDITY_AUTHORITY_SEED,
+        SETTLEMENT_RECEIPT_SEED, TICKET_RECORD_SEED,
     },
     errors::GamingStarsError,
     events::SettlementExecuted,
     instructions::{guards, vaults},
     state::{
-        mark_ticket_forfeited, mark_ticket_paid, mark_ticket_refunded, FactoryState, GameInstance,
-        ResolutionKind, SettlementKind, SettlementReceipt, TicketRecord,
+        mark_ticket_forfeited, mark_ticket_paid, mark_ticket_refunded, ActiveEntry, FactoryState,
+        GameInstance, ResolutionKind, SettlementKind, SettlementReceipt, TicketRecord,
     },
 };
 
@@ -93,6 +93,13 @@ pub struct SettlePayout<'info> {
     #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &args.ticket_id.to_le_bytes()], bump = ticket_record.bump)]
     pub ticket_record: Account<'info, TicketRecord>,
     #[account(
+        mut,
+        seeds = [ACTIVE_ENTRY_SEED, instance.key().as_ref(), ticket_record.owner.as_ref()],
+        bump = active_entry.bump,
+        close = operator
+    )]
+    pub active_entry: Account<'info, ActiveEntry>,
+    #[account(
         init,
         payer = operator,
         space = SettlementReceipt::SPACE,
@@ -117,6 +124,13 @@ pub struct SettleRefund<'info> {
     pub instance: Account<'info, GameInstance>,
     #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &args.ticket_id.to_le_bytes()], bump = ticket_record.bump)]
     pub ticket_record: Account<'info, TicketRecord>,
+    #[account(
+        mut,
+        seeds = [ACTIVE_ENTRY_SEED, instance.key().as_ref(), ticket_record.owner.as_ref()],
+        bump = active_entry.bump,
+        close = operator
+    )]
+    pub active_entry: Account<'info, ActiveEntry>,
     #[account(
         init,
         payer = operator,
@@ -147,6 +161,13 @@ pub struct SettleForfeit<'info> {
     pub instance: Account<'info, GameInstance>,
     #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &args.ticket_id.to_le_bytes()], bump = ticket_record.bump)]
     pub ticket_record: Account<'info, TicketRecord>,
+    #[account(
+        mut,
+        seeds = [ACTIVE_ENTRY_SEED, instance.key().as_ref(), ticket_record.owner.as_ref()],
+        bump = active_entry.bump,
+        close = operator
+    )]
+    pub active_entry: Account<'info, ActiveEntry>,
     #[account(
         init,
         payer = operator,
@@ -194,6 +215,15 @@ pub fn settle_payout_handler<'info>(
         ctx.accounts.ticket_record.owner,
         args.beneficiary,
         GamingStarsError::InvalidBeneficiary
+    );
+    require!(
+        ctx.accounts.active_entry.instance_id == args.instance_id,
+        GamingStarsError::InvalidAmount
+    );
+    require_keys_eq!(
+        ctx.accounts.active_entry.owner,
+        ctx.accounts.ticket_record.owner,
+        GamingStarsError::VaultMismatch
     );
 
     execute_treasury_legs(
@@ -244,6 +274,15 @@ pub fn settle_refund_handler(ctx: Context<SettleRefund>, args: SettleRefundArgs)
         args.beneficiary,
         GamingStarsError::InvalidBeneficiary
     );
+    require!(
+        ctx.accounts.active_entry.instance_id == args.instance_id,
+        GamingStarsError::InvalidAmount
+    );
+    require_keys_eq!(
+        ctx.accounts.active_entry.owner,
+        ctx.accounts.ticket_record.owner,
+        GamingStarsError::VaultMismatch
+    );
 
     execute_refund_transfer(
         ctx.program_id,
@@ -292,6 +331,15 @@ pub fn settle_forfeit_handler<'info>(
     require!(
         ctx.accounts.instance.instance_id == args.instance_id,
         GamingStarsError::InvalidAmount
+    );
+    require!(
+        ctx.accounts.active_entry.instance_id == args.instance_id,
+        GamingStarsError::InvalidAmount
+    );
+    require_keys_eq!(
+        ctx.accounts.active_entry.owner,
+        ctx.accounts.ticket_record.owner,
+        GamingStarsError::VaultMismatch
     );
 
     execute_treasury_legs(
@@ -359,12 +407,30 @@ pub fn settle_users_batch_handler<'info>(
     for item in &args.items {
         let ticket_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
         let receipt_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
+        let active_entry_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
 
         let (expected_ticket, _) =
             crate::state::derive_ticket_record(ctx.program_id, &instance_key, item.ticket_id);
         require_keys_eq!(expected_ticket, ticket_ai.key(), GamingStarsError::VaultMismatch);
 
         let mut ticket_record = Account::<TicketRecord>::try_from(ticket_ai)?;
+        let active_entry = Account::<ActiveEntry>::try_from(active_entry_ai)?;
+        let (expected_active_entry, _) =
+            crate::state::derive_active_entry(ctx.program_id, &instance_key, &ticket_record.owner);
+        require_keys_eq!(
+            expected_active_entry,
+            active_entry.key(),
+            GamingStarsError::VaultMismatch
+        );
+        require!(
+            active_entry.instance_id == args.instance_id,
+            GamingStarsError::InvalidAmount
+        );
+        require_keys_eq!(
+            active_entry.owner,
+            ticket_record.owner,
+            GamingStarsError::VaultMismatch
+        );
 
         match item.kind {
             SettlementKind::Payout => {
@@ -508,6 +574,7 @@ pub fn settle_users_batch_handler<'info>(
         }
 
         ticket_record.exit(ctx.program_id)?;
+        active_entry.close(ctx.accounts.operator.to_account_info())?;
     }
 
     require!(

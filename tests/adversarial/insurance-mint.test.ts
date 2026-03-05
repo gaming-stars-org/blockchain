@@ -1,7 +1,7 @@
 import { BN } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { setupBuyTicketFixture } from "../helpers/buy-ticket-fixture";
+import { activeEntryPda, setupBuyTicketFixture } from "../helpers/buy-ticket-fixture";
 
 describe("insurance mint validation", () => {
   it("accepts insured entries for configured insurance mints", async () => {
@@ -11,7 +11,11 @@ describe("insurance mint validation", () => {
       maxInsuredTickets: 3,
     });
 
-    for (const mintIndex of [0, 1]) {
+    const buyers = [
+      { user: fx.user, payerAta: fx.userTokenAccounts[0] },
+      { user: fx.operator, payerAta: fx.operatorTokenAccounts[1] },
+    ];
+    for (const [mintIndex, buyer] of buyers.entries()) {
       const ticketSeed = new BN(mintIndex).toArrayLike(Buffer, "le", 8);
       const [ticketRecordPda] = PublicKey.findProgramAddressSync(
         [Buffer.from("ticket"), fx.instancePda.toBuffer(), ticketSeed],
@@ -30,14 +34,15 @@ describe("insurance mint validation", () => {
           externalRef: null,
         } as any)
         .accounts({
-          user: fx.user.publicKey,
+          user: buyer.user.publicKey,
           operator: fx.operator.publicKey,
-          payerAuthority: fx.user.publicKey,
+          payerAuthority: buyer.user.publicKey,
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: ticketRecordPda,
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           entryMint: fx.mints[mintIndex].publicKey,
-          payerEntryTokenAccount: fx.userTokenAccounts[mintIndex],
+          payerEntryTokenAccount: buyer.payerAta,
           treasuryVault: fx.treasuryVaults[mintIndex],
           globalLiquidityVault: fx.globalLiquidityVaults[mintIndex],
           liquidityAuthority: fx.liquidityAuthorityPda,
@@ -45,7 +50,7 @@ describe("insurance mint validation", () => {
           tokenProgram: TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,
         } as any)
-        .signers([fx.user, fx.operator])
+        .signers(buyer.user.publicKey.equals(fx.operator.publicKey) ? [fx.operator] : [fx.user, fx.operator])
         .rpc();
     }
   });
@@ -75,6 +80,7 @@ describe("insurance mint validation", () => {
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: fx.ticketRecordPda,
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
           entryMint: fx.mints[2].publicKey,
           payerEntryTokenAccount: fx.userTokenAccounts[2],
           treasuryVault: fx.treasuryVaults[2],

@@ -147,6 +147,17 @@ impl TicketRecord {
 }
 
 #[account]
+pub struct ActiveEntry {
+    pub instance_id: u64,
+    pub owner: Pubkey,
+    pub bump: u8,
+}
+
+impl ActiveEntry {
+    pub const SPACE: usize = 8 + 8 + 32 + 1;
+}
+
+#[account]
 pub struct SettlementReceipt {
     pub settlement_id: [u8; 32],
     pub instance_id: u64,

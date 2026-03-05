@@ -6,6 +6,7 @@ import {
   settlementSeed,
   setupBuyTicketFixture,
   ticketPda,
+  activeEntryPda,
   tokenAmount,
 } from "../helpers/buy-ticket-fixture";
 
@@ -29,6 +30,7 @@ describe("pause matrix", () => {
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
         ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],
         treasuryVault: fx.treasuryVaults[0],
@@ -68,6 +70,7 @@ describe("pause matrix", () => {
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 1),
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
           entryMint: fx.mints[0].publicKey,
           payerEntryTokenAccount: fx.userTokenAccounts[0],
           treasuryVault: fx.treasuryVaults[0],
@@ -106,6 +109,7 @@ describe("pause matrix", () => {
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
           ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+          activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
           settlementReceipt: settlementReceiptPda(fx.program.programId, 81),
           instanceAuthority: fx.instanceAuthorityPda,
           tokenProgram: TOKEN_PROGRAM_ID,

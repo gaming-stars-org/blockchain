@@ -49,6 +49,7 @@ export type BuyTicketFixture = {
   treasuryVaults: PublicKey[];
   globalLiquidityVaults: PublicKey[];
   ticketRecordPda: PublicKey;
+  activeEntryPda: PublicKey;
   mints: Keypair[];
   masterTokenAccounts: PublicKey[];
   userTokenAccounts: PublicKey[];
@@ -173,6 +174,10 @@ export async function setupBuyTicketFixture(
     [Buffer.from("ticket"), instancePda.toBuffer(), u64le(0)],
     program.programId
   );
+  const [activeEntryPda] = PublicKey.findProgramAddressSync(
+    [Buffer.from("active-entry"), instancePda.toBuffer(), user.publicKey.toBuffer()],
+    program.programId
+  );
 
   const masterTokenAccounts: PublicKey[] = [];
   const userTokenAccounts: PublicKey[] = [];
@@ -212,6 +217,7 @@ export async function setupBuyTicketFixture(
     treasuryVaults,
     globalLiquidityVaults,
     ticketRecordPda,
+    activeEntryPda,
     mints,
     masterTokenAccounts,
     userTokenAccounts,
@@ -238,6 +244,13 @@ export function ticketPda(programId: PublicKey, instance: PublicKey, ticketId: n
   const ticketSeed = new BN(ticketId).toArrayLike(Buffer, "le", 8);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("ticket"), instance.toBuffer(), ticketSeed],
+    programId
+  )[0];
+}
+
+export function activeEntryPda(programId: PublicKey, instance: PublicKey, owner: PublicKey): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from("active-entry"), instance.toBuffer(), owner.toBuffer()],
     programId
   )[0];
 }

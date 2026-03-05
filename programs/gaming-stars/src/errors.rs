@@ -46,4 +46,6 @@ pub enum GamingStarsError {
     SponsoredInsuranceNotAllowed,
     #[msg("Maximum insured tickets reached")]
     MaxInsuredTicketsReached,
+    #[msg("Active ticket already exists for user in this game")]
+    ActiveTicketExists,
 }

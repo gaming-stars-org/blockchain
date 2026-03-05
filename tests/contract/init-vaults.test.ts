@@ -4,6 +4,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   setupBuyTicketFixture,
   ticketPda,
+  activeEntryPda,
   tokenAmount,
 } from "../helpers/buy-ticket-fixture";
 
@@ -55,6 +56,7 @@ describe("vault initialization", () => {
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
         ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],
         treasuryVault: fx.treasuryVaults[0],

@@ -6,6 +6,7 @@ import {
   settlementSeed,
   setupBuyTicketFixture,
   ticketPda,
+  activeEntryPda,
   tokenAmount,
 } from "../helpers/buy-ticket-fixture";
 
@@ -29,6 +30,7 @@ describe("settle_refund", () => {
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
         ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],
         treasuryVault: fx.treasuryVaults[0],
@@ -78,6 +80,7 @@ describe("settle_refund", () => {
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
         ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         settlementReceipt: settlementReceiptPda(fx.program.programId, 21),
         refundMint: fx.mints[0].publicKey,
         globalLiquidityVault: fx.globalLiquidityVaults[0],
