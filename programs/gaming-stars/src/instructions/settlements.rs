@@ -64,6 +64,19 @@ pub struct SettleForfeitArgs {
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct SettleInsuredExpiryArgs {
+    pub settlement_id: [u8; 32],
+    pub instance_id: u64,
+    pub ticket_id: u64,
+    pub beneficiary: Pubkey,
+    pub legs: Vec<TransferLeg>,
+    pub refund_mint: Pubkey,
+    pub refund_amount: u64,
+    pub resolution_kind: ResolutionKind,
+    pub payload_hash: [u8; 32],
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
 pub struct BatchSettleItem {
     pub settlement_id: [u8; 32],
     pub ticket_id: u64,
@@ -180,6 +193,45 @@ pub struct SettleForfeit<'info> {
     pub settlement_receipt: Account<'info, SettlementReceipt>,
     /// CHECK: validated against PDA derivation and used as signer for treasury vault transfers.
     pub instance_authority: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(args: SettleInsuredExpiryArgs)]
+pub struct SettleInsuredExpiry<'info> {
+    #[account(mut)]
+    pub operator: Signer<'info>,
+    #[account(seeds = [crate::constants::FACTORY_STATE_SEED], bump = factory_state.bump)]
+    pub factory_state: Account<'info, FactoryState>,
+    #[account(mut, seeds = [INSTANCE_SEED, &instance.instance_id.to_le_bytes()], bump = instance.bump)]
+    pub instance: Account<'info, GameInstance>,
+    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), args.beneficiary.as_ref()], bump = ticket_record.bump, close = operator)]
+    pub ticket_record: Account<'info, TicketRecord>,
+    #[account(
+        mut,
+        seeds = [ACTIVE_ENTRY_SEED, instance.key().as_ref(), ticket_record.owner.as_ref()],
+        bump = active_entry.bump,
+        close = operator
+    )]
+    pub active_entry: Account<'info, ActiveEntry>,
+    #[account(
+        init,
+        payer = operator,
+        space = SettlementReceipt::SPACE,
+        seeds = [SETTLEMENT_RECEIPT_SEED, &args.settlement_id],
+        bump
+    )]
+    pub settlement_receipt: Account<'info, SettlementReceipt>,
+    /// CHECK: validated against PDA derivation and used as signer for treasury vault transfers.
+    pub instance_authority: UncheckedAccount<'info>,
+    pub refund_mint: InterfaceAccount<'info, anchor_spl::token_interface::Mint>,
+    #[account(mut)]
+    pub global_liquidity_vault: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut)]
+    pub beneficiary_token_account: InterfaceAccount<'info, TokenAccount>,
+    /// CHECK: validated against PDA derivation and used as signer for global liquidity transfers.
+    pub liquidity_authority: UncheckedAccount<'info>,
     pub token_program: Interface<'info, TokenInterface>,
     pub system_program: Program<'info, System>,
 }
@@ -381,6 +433,84 @@ pub fn settle_forfeit_handler<'info>(
     Ok(())
 }
 
+pub fn settle_insured_expiry_handler<'info>(
+    ctx: Context<'_, '_, 'info, 'info, SettleInsuredExpiry<'info>>,
+    args: SettleInsuredExpiryArgs,
+) -> Result<()> {
+    let now_ts = Clock::get()?.unix_timestamp;
+
+    guards::assert_operator_wallet(&ctx.accounts.factory_state, &ctx.accounts.operator.key())?;
+    guards::assert_instance_not_paused(&ctx.accounts.instance)?;
+    require!(
+        ctx.accounts.instance.instance_id == args.instance_id,
+        GamingStarsError::InvalidAmount
+    );
+
+    require_keys_eq!(
+        ctx.accounts.ticket_record.owner,
+        args.beneficiary,
+        GamingStarsError::InvalidBeneficiary
+    );
+    require!(
+        ctx.accounts.active_entry.instance_id == args.instance_id,
+        GamingStarsError::InvalidAmount
+    );
+    require_keys_eq!(
+        ctx.accounts.active_entry.owner,
+        ctx.accounts.ticket_record.owner,
+        GamingStarsError::VaultMismatch
+    );
+    require!(
+        ctx.accounts.ticket_record.insured,
+        GamingStarsError::TicketNotInsured
+    );
+
+    execute_treasury_legs(
+        ctx.program_id,
+        &ctx.accounts.instance.key(),
+        &ctx.accounts.instance_authority,
+        &ctx.accounts.token_program,
+        &args.legs,
+        ctx.remaining_accounts,
+        None,
+    )?;
+
+    execute_refund_transfer(
+        ctx.program_id,
+        &ctx.accounts.instance,
+        &ctx.accounts.liquidity_authority,
+        &ctx.accounts.token_program,
+        args.beneficiary,
+        args.refund_mint,
+        args.refund_amount,
+        &ctx.accounts.refund_mint,
+        &ctx.accounts.global_liquidity_vault,
+        &ctx.accounts.beneficiary_token_account,
+    )?;
+
+    mark_ticket_refunded(&mut ctx.accounts.ticket_record, now_ts, args.resolution_kind)?;
+    write_receipt(
+        &mut ctx.accounts.settlement_receipt,
+        args.settlement_id,
+        args.instance_id,
+        args.ticket_id,
+        SettlementKind::InsuredExpiry,
+        args.payload_hash,
+        ctx.accounts.operator.key(),
+        now_ts,
+        ctx.bumps.settlement_receipt,
+    );
+
+    emit!(SettlementExecuted {
+        settlement_id: args.settlement_id,
+        instance_id: args.instance_id,
+        ticket_id: args.ticket_id,
+        kind: SettlementKind::InsuredExpiry as u8,
+    });
+
+    Ok(())
+}
+
 pub fn settle_users_batch_handler<'info>(
     ctx: Context<'_, '_, 'info, 'info, SettleUsersBatch<'info>>,
     args: SettleUsersBatchArgs,
@@ -571,6 +701,84 @@ pub fn settle_users_batch_handler<'info>(
                     instance_id: args.instance_id,
                     ticket_id: item.ticket_id,
                     kind: SettlementKind::Forfeit as u8,
+                });
+            }
+            SettlementKind::InsuredExpiry => {
+                require!(
+                    ticket_record.insured,
+                    GamingStarsError::TicketNotInsured
+                );
+
+                let beneficiary = item
+                    .beneficiary
+                    .ok_or(error!(GamingStarsError::InvalidBeneficiary))?;
+                require_keys_eq!(
+                    ticket_record.owner,
+                    beneficiary,
+                    GamingStarsError::InvalidBeneficiary
+                );
+
+                execute_treasury_legs_with_cursor(
+                    ctx.program_id,
+                    &instance_key,
+                    &ctx.accounts.instance_authority,
+                    &ctx.accounts.token_program,
+                    &item.legs,
+                    ctx.remaining_accounts,
+                    &mut cursor,
+                    None,
+                )?;
+
+                let refund_mint = item
+                    .refund_mint
+                    .ok_or(error!(GamingStarsError::InvalidInsuranceMint))?;
+                let refund_amount = item
+                    .refund_amount
+                    .ok_or(error!(GamingStarsError::InvalidAmount))?;
+
+                let refund_mint_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
+                let global_vault_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
+                let beneficiary_ata_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
+
+                let refund_mint_account = InterfaceAccount::<Mint>::try_from(refund_mint_ai)?;
+                let global_liquidity_vault =
+                    InterfaceAccount::<TokenAccount>::try_from(global_vault_ai)?;
+                let beneficiary_token_account =
+                    InterfaceAccount::<TokenAccount>::try_from(beneficiary_ata_ai)?;
+
+                execute_refund_transfer(
+                    ctx.program_id,
+                    &ctx.accounts.instance,
+                    &ctx.accounts.liquidity_authority,
+                    &ctx.accounts.token_program,
+                    beneficiary,
+                    refund_mint,
+                    refund_amount,
+                    &refund_mint_account,
+                    &global_liquidity_vault,
+                    &beneficiary_token_account,
+                )?;
+
+                mark_ticket_refunded(&mut ticket_record, now_ts, item.resolution_kind)?;
+                create_settlement_receipt(
+                    ctx.program_id,
+                    &ctx.accounts.operator,
+                    &ctx.accounts.system_program,
+                    receipt_ai,
+                    item.settlement_id,
+                    args.instance_id,
+                    item.ticket_id,
+                    SettlementKind::InsuredExpiry,
+                    item.payload_hash,
+                    ctx.accounts.operator.key(),
+                    now_ts,
+                )?;
+
+                emit!(SettlementExecuted {
+                    settlement_id: item.settlement_id,
+                    instance_id: args.instance_id,
+                    ticket_id: item.ticket_id,
+                    kind: SettlementKind::InsuredExpiry as u8,
                 });
             }
         }

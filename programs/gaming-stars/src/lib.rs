@@ -97,6 +97,13 @@ pub mod gaming_stars {
         settle_forfeit_handler(ctx, args)
     }
 
+    pub fn settle_insured_expiry<'info>(
+        ctx: Context<'_, '_, 'info, 'info, SettleInsuredExpiry<'info>>,
+        args: SettleInsuredExpiryArgs,
+    ) -> Result<()> {
+        settle_insured_expiry_handler(ctx, args)
+    }
+
     pub fn settle_users_batch<'info>(
         ctx: Context<'_, '_, 'info, 'info, SettleUsersBatch<'info>>,
         args: SettleUsersBatchArgs,

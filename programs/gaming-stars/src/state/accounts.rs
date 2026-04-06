@@ -41,6 +41,7 @@ pub enum SettlementKind {
     Payout = 0,
     Refund = 1,
     Forfeit = 2,
+    InsuredExpiry = 3,
 }
 
 #[account]
