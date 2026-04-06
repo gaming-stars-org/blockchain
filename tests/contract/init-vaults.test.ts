@@ -55,7 +55,7 @@ describe("vault initialization", () => {
         payerAuthority: fx.user.publicKey,
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
-        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],

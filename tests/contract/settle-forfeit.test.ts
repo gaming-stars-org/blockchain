@@ -34,7 +34,7 @@ describe("settle_forfeit", () => {
           payerAuthority: buyer.user.publicKey,
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
-          ticketRecord: ticketPda(fx.program.programId, fx.instancePda, mintIndex),
+          ticketRecord: ticketPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           entryMint: fx.mints[mintIndex].publicKey,
           payerEntryTokenAccount: buyer.payerAta,
@@ -58,6 +58,7 @@ describe("settle_forfeit", () => {
         settlementId,
         instanceId: fx.instanceId,
         ticketId: new BN(0),
+        owner: fx.user.publicKey,
         legs: [
           {
             mint: fx.mints[0].publicKey,
@@ -79,7 +80,7 @@ describe("settle_forfeit", () => {
         operator: fx.operator.publicKey,
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
-        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         settlementReceipt: settlementReceiptPda(fx.program.programId, 41),
         instanceAuthority: fx.instanceAuthorityPda,

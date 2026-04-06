@@ -171,7 +171,7 @@ export async function setupBuyTicketFixture(
     .rpc();
 
   const [ticketRecordPda] = PublicKey.findProgramAddressSync(
-    [Buffer.from("ticket"), instancePda.toBuffer(), u64le(0)],
+    [Buffer.from("ticket"), instancePda.toBuffer(), user.publicKey.toBuffer()],
     program.programId
   );
   const [activeEntryPda] = PublicKey.findProgramAddressSync(
@@ -240,10 +240,9 @@ export async function tokenAmount(client: any, tokenAccount: PublicKey): Promise
   return raw.amount as bigint;
 }
 
-export function ticketPda(programId: PublicKey, instance: PublicKey, ticketId: number): PublicKey {
-  const ticketSeed = new BN(ticketId).toArrayLike(Buffer, "le", 8);
+export function ticketPda(programId: PublicKey, instance: PublicKey, owner: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("ticket"), instance.toBuffer(), ticketSeed],
+    [Buffer.from("ticket"), instance.toBuffer(), owner.toBuffer()],
     programId
   )[0];
 }

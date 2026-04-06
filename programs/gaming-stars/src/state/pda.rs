@@ -10,10 +10,6 @@ pub fn instance_id_seed(instance_id: u64) -> [u8; 8] {
     instance_id.to_le_bytes()
 }
 
-pub fn ticket_id_seed(ticket_id: u64) -> [u8; 8] {
-    ticket_id.to_le_bytes()
-}
-
 pub fn derive_factory_state(program_id: &Pubkey) -> (Pubkey, u8) {
     Pubkey::find_program_address(&[FACTORY_STATE_SEED], program_id)
 }
@@ -49,11 +45,10 @@ pub fn derive_global_liquidity_vault(program_id: &Pubkey, mint: &Pubkey) -> (Pub
 pub fn derive_ticket_record(
     program_id: &Pubkey,
     instance: &Pubkey,
-    ticket_id: u64,
+    owner: &Pubkey,
 ) -> (Pubkey, u8) {
-    let ticket_seed = ticket_id_seed(ticket_id);
     Pubkey::find_program_address(
-        &[TICKET_RECORD_SEED, instance.as_ref(), &ticket_seed],
+        &[TICKET_RECORD_SEED, instance.as_ref(), owner.as_ref()],
         program_id,
     )
 }

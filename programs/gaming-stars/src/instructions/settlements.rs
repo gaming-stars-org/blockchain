@@ -57,6 +57,7 @@ pub struct SettleForfeitArgs {
     pub settlement_id: [u8; 32],
     pub instance_id: u64,
     pub ticket_id: u64,
+    pub owner: Pubkey,
     pub legs: Vec<TransferLeg>,
     pub resolution_kind: ResolutionKind,
     pub payload_hash: [u8; 32],
@@ -66,6 +67,7 @@ pub struct SettleForfeitArgs {
 pub struct BatchSettleItem {
     pub settlement_id: [u8; 32],
     pub ticket_id: u64,
+    pub owner: Pubkey,
     pub kind: SettlementKind,
     pub beneficiary: Option<Pubkey>,
     pub refund_mint: Option<Pubkey>,
@@ -90,7 +92,7 @@ pub struct SettlePayout<'info> {
     pub factory_state: Account<'info, FactoryState>,
     #[account(mut, seeds = [INSTANCE_SEED, &instance.instance_id.to_le_bytes()], bump = instance.bump)]
     pub instance: Account<'info, GameInstance>,
-    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &args.ticket_id.to_le_bytes()], bump = ticket_record.bump)]
+    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), args.beneficiary.as_ref()], bump = ticket_record.bump, close = operator)]
     pub ticket_record: Account<'info, TicketRecord>,
     #[account(
         mut,
@@ -122,7 +124,7 @@ pub struct SettleRefund<'info> {
     pub factory_state: Account<'info, FactoryState>,
     #[account(mut, seeds = [INSTANCE_SEED, &instance.instance_id.to_le_bytes()], bump = instance.bump)]
     pub instance: Account<'info, GameInstance>,
-    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &args.ticket_id.to_le_bytes()], bump = ticket_record.bump)]
+    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), args.beneficiary.as_ref()], bump = ticket_record.bump, close = operator)]
     pub ticket_record: Account<'info, TicketRecord>,
     #[account(
         mut,
@@ -159,7 +161,7 @@ pub struct SettleForfeit<'info> {
     pub factory_state: Account<'info, FactoryState>,
     #[account(mut, seeds = [INSTANCE_SEED, &instance.instance_id.to_le_bytes()], bump = instance.bump)]
     pub instance: Account<'info, GameInstance>,
-    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &args.ticket_id.to_le_bytes()], bump = ticket_record.bump)]
+    #[account(mut, seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), args.owner.as_ref()], bump = ticket_record.bump, close = operator)]
     pub ticket_record: Account<'info, TicketRecord>,
     #[account(
         mut,
@@ -410,7 +412,7 @@ pub fn settle_users_batch_handler<'info>(
         let active_entry_ai = take_account(ctx.remaining_accounts, &mut cursor)?;
 
         let (expected_ticket, _) =
-            crate::state::derive_ticket_record(ctx.program_id, &instance_key, item.ticket_id);
+            crate::state::derive_ticket_record(ctx.program_id, &instance_key, &item.owner);
         require_keys_eq!(expected_ticket, ticket_ai.key(), GamingStarsError::VaultMismatch);
 
         let mut ticket_record = Account::<TicketRecord>::try_from(ticket_ai)?;
@@ -573,7 +575,7 @@ pub fn settle_users_batch_handler<'info>(
             }
         }
 
-        ticket_record.exit(ctx.program_id)?;
+        ticket_record.close(ctx.accounts.operator.to_account_info())?;
         active_entry.close(ctx.accounts.operator.to_account_info())?;
     }
 

@@ -11,10 +11,9 @@ describe("insured cap guard", () => {
       { user: fx.user, payerAta: fx.userTokenAccounts[0] },
       { user: fx.operator, payerAta: fx.operatorTokenAccounts[0] },
     ];
-    for (const [ticketId, buyer] of buyers.entries()) {
-      const ticketSeed = new BN(ticketId).toArrayLike(Buffer, "le", 8);
+    for (const [, buyer] of buyers.entries()) {
       const [ticketRecordPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("ticket"), fx.instancePda.toBuffer(), ticketSeed],
+        [Buffer.from("ticket"), fx.instancePda.toBuffer(), buyer.user.publicKey.toBuffer()],
         fx.program.programId
       );
 
@@ -53,9 +52,8 @@ describe("insured cap guard", () => {
     const instance = await fx.program.account.gameInstance.fetch(fx.instancePda);
     expect(instance.insuredTicketsCount).toBe(2);
 
-    const overflowTicketSeed = new BN(2).toArrayLike(Buffer, "le", 8);
     const [overflowTicketPda] = PublicKey.findProgramAddressSync(
-      [Buffer.from("ticket"), fx.instancePda.toBuffer(), overflowTicketSeed],
+      [Buffer.from("ticket"), fx.instancePda.toBuffer(), fx.masterWallet.publicKey.toBuffer()],
       fx.program.programId
     );
 

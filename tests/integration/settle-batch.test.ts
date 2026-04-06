@@ -29,7 +29,7 @@ describe("settle_users_batch", () => {
         payerAuthority: fx.user.publicKey,
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
-        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         entryMint: fx.mints[0].publicKey,
         payerEntryTokenAccount: fx.userTokenAccounts[0],
@@ -53,6 +53,7 @@ describe("settle_users_batch", () => {
           {
             settlementId: settlementSeed(61),
             ticketId: new BN(0),
+            owner: fx.user.publicKey,
             kind: { payout: {} },
             beneficiary: fx.user.publicKey,
             refundMint: null,
@@ -80,7 +81,7 @@ describe("settle_users_batch", () => {
         systemProgram: SystemProgram.programId,
       } as any)
       .remainingAccounts([
-        { pubkey: ticketPda(fx.program.programId, fx.instancePda, 0), isSigner: false, isWritable: true },
+        { pubkey: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey), isSigner: false, isWritable: true },
         { pubkey: settlementReceiptPda(fx.program.programId, 61), isSigner: false, isWritable: true },
         {
           pubkey: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
@@ -101,10 +102,11 @@ describe("settle_users_batch", () => {
       user0Before + BigInt(fx.ticketPrice)
     );
 
-    const ticket0 = await fx.program.account.ticketRecord.fetch(
-      ticketPda(fx.program.programId, fx.instancePda, 0)
+    // ticket_record is closed on settlement — verify it no longer exists
+    const ticket0Account = fx.client.getAccount(
+      ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey)
     );
-    expect(Object.keys(ticket0.status)[0]).toBe("paid");
+    expect(ticket0Account).toBeNull();
 
     await expect(
       fx.program.methods
@@ -114,6 +116,7 @@ describe("settle_users_batch", () => {
             {
               settlementId: settlementSeed(71),
               ticketId: new BN(0),
+              owner: fx.user.publicKey,
               kind: { payout: {} },
               beneficiary: fx.user.publicKey,
               refundMint: null,
@@ -132,6 +135,7 @@ describe("settle_users_batch", () => {
             {
               settlementId: settlementSeed(71),
               ticketId: new BN(1),
+              owner: fx.user.publicKey,
               kind: { forfeit: {} },
               beneficiary: null,
               refundMint: null,

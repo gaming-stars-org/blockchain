@@ -35,7 +35,7 @@ pub struct BuyTicket<'info> {
         init,
         payer = user,
         space = TicketRecord::SPACE,
-        seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), &instance.next_ticket_id.to_le_bytes()],
+        seeds = [TICKET_RECORD_SEED, instance.key().as_ref(), user.key().as_ref()],
         bump
     )]
     pub ticket_record: Account<'info, TicketRecord>,

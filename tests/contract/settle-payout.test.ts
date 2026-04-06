@@ -34,7 +34,7 @@ describe("settle_payout", () => {
           payerAuthority: buyer.user.publicKey,
           factoryState: fx.factoryStatePda,
           instance: fx.instancePda,
-          ticketRecord: ticketPda(fx.program.programId, fx.instancePda, mintIndex),
+          ticketRecord: ticketPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, buyer.user.publicKey),
           entryMint: fx.mints[mintIndex].publicKey,
           payerEntryTokenAccount: buyer.payerAta,
@@ -82,7 +82,7 @@ describe("settle_payout", () => {
         operator: fx.operator.publicKey,
         factoryState: fx.factoryStatePda,
         instance: fx.instancePda,
-        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, 0),
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
         settlementReceipt: settlementReceiptPda(fx.program.programId, 11),
         instanceAuthority: fx.instanceAuthorityPda,
@@ -113,9 +113,10 @@ describe("settle_payout", () => {
       beneficiary1Before + BigInt(fx.ticketPrice)
     );
 
-    const ticket = await fx.program.account.ticketRecord.fetch(
-      ticketPda(fx.program.programId, fx.instancePda, 0)
+    // ticket_record is closed on settlement — verify it no longer exists
+    const ticketAccount = fx.client.getAccount(
+      ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey)
     );
-    expect(Object.keys(ticket.status)[0]).toBe("paid");
+    expect(ticketAccount).toBeNull();
   });
 });

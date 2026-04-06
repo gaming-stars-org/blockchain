@@ -16,9 +16,8 @@ describe("insurance mint validation", () => {
       { user: fx.operator, payerAta: fx.operatorTokenAccounts[1] },
     ];
     for (const [mintIndex, buyer] of buyers.entries()) {
-      const ticketSeed = new BN(mintIndex).toArrayLike(Buffer, "le", 8);
       const [ticketRecordPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("ticket"), fx.instancePda.toBuffer(), ticketSeed],
+        [Buffer.from("ticket"), fx.instancePda.toBuffer(), buyer.user.publicKey.toBuffer()],
         fx.program.programId
       );
 
