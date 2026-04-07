@@ -105,4 +105,69 @@ describe("settle_forfeit", () => {
       dev1Before + BigInt(fx.ticketPrice)
     );
   });
+
+  it("succeeds with empty legs and closes ticket without transfer", async () => {
+    const fx = await setupBuyTicketFixture();
+
+    await fx.program.methods
+      .buyTicket({
+        entryMode: { paid: {} },
+        entryMint: fx.mints[0].publicKey,
+        insured: false,
+        entryTotalAmount: new BN(fx.ticketPrice + fx.entryFee),
+        insurancePremiumAmount: new BN(0),
+        externalRef: null,
+      } as any)
+      .accounts({
+        user: fx.user.publicKey,
+        operator: fx.operator.publicKey,
+        payerAuthority: fx.user.publicKey,
+        factoryState: fx.factoryStatePda,
+        instance: fx.instancePda,
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
+        entryMint: fx.mints[0].publicKey,
+        payerEntryTokenAccount: fx.userTokenAccounts[0],
+        treasuryVault: fx.treasuryVaults[0],
+        globalLiquidityVault: fx.globalLiquidityVaults[0],
+        liquidityAuthority: fx.liquidityAuthorityPda,
+        devWalletTokenAccount: fx.devTokenAccounts[0],
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      } as any)
+      .signers([fx.user, fx.operator])
+      .rpc();
+
+    const devBefore = await tokenAmount(fx.client, fx.devTokenAccounts[0]);
+    const vaultBefore = await tokenAmount(fx.client, fx.treasuryVaults[0]);
+
+    const settlementId = settlementSeed(42);
+    await fx.program.methods
+      .settleForfeit({
+        settlementId,
+        instanceId: fx.instanceId,
+        ticketId: new BN(0),
+        owner: fx.user.publicKey,
+        legs: [],
+        resolutionKind: { loss: {} },
+        payloadHash: settlementId,
+      } as any)
+      .accounts({
+        operator: fx.operator.publicKey,
+        factoryState: fx.factoryStatePda,
+        instance: fx.instancePda,
+        ticketRecord: ticketPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
+        activeEntry: activeEntryPda(fx.program.programId, fx.instancePda, fx.user.publicKey),
+        settlementReceipt: settlementReceiptPda(fx.program.programId, 42),
+        instanceAuthority: fx.instanceAuthorityPda,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      } as any)
+      .remainingAccounts([])
+      .signers([fx.operator])
+      .rpc();
+
+    expect(await tokenAmount(fx.client, fx.devTokenAccounts[0])).toBe(devBefore);
+    expect(await tokenAmount(fx.client, fx.treasuryVaults[0])).toBe(vaultBefore);
+  });
 });
