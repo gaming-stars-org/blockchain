@@ -48,4 +48,6 @@ pub enum GamingStarsError {
     MaxInsuredTicketsReached,
     #[msg("Active ticket already exists for user in this game")]
     ActiveTicketExists,
+    #[msg("Ticket is not insured")]
+    TicketNotInsured,
 }
