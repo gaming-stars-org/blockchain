@@ -829,7 +829,9 @@ fn execute_treasury_legs_with_cursor<'info>(
     cursor: &mut usize,
     beneficiary: Option<Pubkey>,
 ) -> Result<()> {
-    require!(!legs.is_empty(), GamingStarsError::InvalidAmount);
+    if legs.is_empty() {
+        return Ok(());
+    }
 
     let (expected_instance_authority, instance_authority_bump) =
         crate::state::derive_instance_authority(program_id, instance_key);
