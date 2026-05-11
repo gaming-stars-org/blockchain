@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::{EMPTY_PUBKEY, FACTORY_STATE_SEED},
-    events::GlobalWalletsUpdated,
     instructions::guards,
     state::FactoryState,
 };
@@ -52,12 +51,6 @@ pub fn update_global_wallets_handler(
     }
 
     factory.updated_at = Clock::get()?.unix_timestamp;
-
-    emit!(GlobalWalletsUpdated {
-        dev_wallet: factory.dev_wallet,
-        master_wallet: factory.master_wallet,
-        operator_wallet: factory.operator_wallet,
-    });
 
     Ok(())
 }
