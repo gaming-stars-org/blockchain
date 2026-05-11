@@ -6,7 +6,6 @@ use anchor_spl::token_interface::{
 use crate::{
     constants::{FACTORY_STATE_SEED, GLOBAL_LIQUIDITY_VAULT_SEED, LIQUIDITY_AUTHORITY_SEED},
     errors::GamingStarsError,
-    events::GlobalLiquidityWithdrawn,
     instructions::{guards, vaults},
     state::FactoryState,
 };
@@ -188,12 +187,6 @@ pub fn withdraw_global_liquidity_handler(
         args.amount,
         ctx.accounts.mint.decimals,
     )?;
-
-    emit!(GlobalLiquidityWithdrawn {
-        mint: args.mint,
-        amount: args.amount,
-        master_wallet: ctx.accounts.master_wallet.key(),
-    });
 
     Ok(())
 }

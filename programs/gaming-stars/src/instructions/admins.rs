@@ -3,7 +3,6 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::{FACTORY_STATE_SEED, MAX_ADMINS},
     errors::GamingStarsError,
-    events::{AdminAdded, AdminRemoved},
     instructions::guards,
     state::FactoryState,
 };
@@ -32,9 +31,6 @@ pub fn add_admin_handler(ctx: Context<UpdateAdmin>, admin_wallet: Pubkey) -> Res
     factory.admins.push(admin_wallet);
     factory.updated_at = Clock::get()?.unix_timestamp;
 
-    emit!(AdminAdded {
-        admin: admin_wallet
-    });
     Ok(())
 }
 
@@ -51,8 +47,5 @@ pub fn remove_admin_handler(ctx: Context<UpdateAdmin>, admin_wallet: Pubkey) -> 
     );
 
     factory.updated_at = Clock::get()?.unix_timestamp;
-    emit!(AdminRemoved {
-        admin: admin_wallet
-    });
     Ok(())
 }

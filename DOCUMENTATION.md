@@ -335,8 +335,6 @@ pub fn initialize_factory(
 
 **Access Control:** None (first-time initialization only; PDA ensures singleton).
 
-**Emits:** `FactoryInitialized { owner, dev_wallet, master_wallet, operator_wallet }`
-
 ---
 
 ### add_admin
@@ -366,8 +364,6 @@ pub fn add_admin(ctx: Context<UpdateAdmin>, admin_wallet: Pubkey) -> Result<()>
 - `AdminAlreadyExists` — Admin already in the list.
 - `ImmutableConfig` — Admin list is full (32).
 
-**Emits:** `AdminAdded { admin }`
-
 ---
 
 ### remove_admin
@@ -395,8 +391,6 @@ pub fn remove_admin(ctx: Context<UpdateAdmin>, admin_wallet: Pubkey) -> Result<(
 
 **Errors:**
 - `AdminNotFound` — Admin not in the list.
-
-**Emits:** `AdminRemoved { admin }`
 
 ---
 
@@ -427,8 +421,6 @@ pub fn update_global_wallets(
 | `factory_state` | `Account<FactoryState>` | Yes | No | The factory state PDA. |
 
 **Access Control:** Owner only.
-
-**Emits:** `GlobalWalletsUpdated { dev_wallet, master_wallet, operator_wallet }`
 
 ---
 
@@ -478,8 +470,6 @@ pub fn deploy_instance<'info>(
 
 **Access Control:** Owner or admin.
 
-**Emits:** `InstanceDeployed { instance_id }`
-
 ---
 
 ### freeze_instance
@@ -502,8 +492,6 @@ pub fn freeze_instance(ctx: Context<UpdateInstanceStatus>) -> Result<()>
 
 **Errors:**
 - `InstanceNotActive` — Instance is not currently active.
-
-**Emits:** `InstanceStatusChanged { instance_id, status: 1 }`
 
 ---
 
@@ -528,8 +516,6 @@ pub fn unfreeze_instance(ctx: Context<UpdateInstanceStatus>) -> Result<()>
 **Errors:**
 - `InstanceNotActive` — Instance is not currently paused.
 
-**Emits:** `InstanceStatusChanged { instance_id, status: 0 }`
-
 ---
 
 ### set_game_over
@@ -552,8 +538,6 @@ pub fn set_game_over(ctx: Context<UpdateInstanceStatus>) -> Result<()>
 
 **Errors:**
 - `GameOver` — Instance is already game over.
-
-**Emits:** `InstanceStatusChanged { instance_id, status: 2 }`
 
 ---
 
@@ -612,8 +596,6 @@ pub fn buy_ticket(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Result<()>
 - `MaxInsuredTicketsReached` — Insurance cap reached.
 - `InvalidAmount` — Total amount doesn't match expected calculation.
 - `ActiveTicketExists` — User already has an active ticket in this game (init of `active_entry` PDA fails).
-
-**Emits:** `TicketPurchased { instance_id, ticket_id, owner, insured }`
 
 ---
 
@@ -760,8 +742,6 @@ pub fn settle_payout<'info>(
 
 **Access Control:** Operator wallet only. Instance must not be paused.
 
-**Emits:** `SettlementExecuted { settlement_id, instance_id, ticket_id, kind: 0 }`
-
 ---
 
 ### settle_refund
@@ -809,8 +789,6 @@ pub fn settle_refund(ctx: Context<SettleRefund>, args: SettleRefundArgs) -> Resu
 - `InsufficientVaultBalance` — Global liquidity vault has insufficient funds.
 - `InvalidBeneficiary` — Beneficiary doesn't match ticket owner.
 
-**Emits:** `SettlementExecuted { settlement_id, instance_id, ticket_id, kind: 1 }`
-
 ---
 
 ### settle_forfeit
@@ -852,8 +830,6 @@ pub fn settle_forfeit<'info>(
 **Remaining Accounts:** Same as `settle_payout` — for each leg: mint, source vault, destination ATA.
 
 **Access Control:** Operator wallet only. Instance must not be paused.
-
-**Emits:** `SettlementExecuted { settlement_id, instance_id, ticket_id, kind: 2 }`
 
 ---
 
@@ -913,23 +889,6 @@ pub fn settle_users_batch<'info>(
 **Errors:**
 - `DuplicateSettlement` — Duplicate `settlement_id` within the batch.
 - `InvalidAmount` — Remaining accounts count doesn't match expected.
-
-**Emits:** `SettlementExecuted` for each item in the batch.
-
----
-
-## Events
-
-| Event | Fields | Emitted By |
-|-------|--------|------------|
-| `FactoryInitialized` | `owner`, `dev_wallet`, `master_wallet`, `operator_wallet` | `initialize_factory` |
-| `AdminAdded` | `admin` | `add_admin` |
-| `AdminRemoved` | `admin` | `remove_admin` |
-| `GlobalWalletsUpdated` | `dev_wallet`, `master_wallet`, `operator_wallet` | `update_global_wallets` |
-| `InstanceDeployed` | `instance_id` | `deploy_instance` |
-| `InstanceStatusChanged` | `instance_id`, `status` | `freeze_instance`, `unfreeze_instance`, `set_game_over` |
-| `TicketPurchased` | `instance_id`, `ticket_id`, `owner`, `insured` | `buy_ticket` |
-| `SettlementExecuted` | `settlement_id`, `instance_id`, `ticket_id`, `kind` | `settle_payout`, `settle_refund`, `settle_forfeit`, `settle_users_batch` |
 
 ---
 

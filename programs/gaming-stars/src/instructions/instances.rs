@@ -14,7 +14,6 @@ use crate::{
         MAX_ACCEPTED_MINTS, MAX_INSURANCE_MINTS, TREASURY_VAULT_SEED,
     },
     errors::GamingStarsError,
-    events::{InstanceClosed, InstanceDeployed, InstanceStatusChanged},
     instructions::guards,
     state::{
         transition_to_active, transition_to_game_over, transition_to_paused, FactoryState,
@@ -241,10 +240,6 @@ pub fn deploy_handler<'info>(
         .ok_or(GamingStarsError::ArithmeticOverflow)?;
     factory.updated_at = now_ts;
 
-    emit!(InstanceDeployed {
-        instance_id: instance.instance_id,
-    });
-
     Ok(())
 }
 
@@ -263,11 +258,6 @@ pub fn freeze_handler(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
     transition_to_paused(&mut ctx.accounts.instance, now_ts)?;
 
-    emit!(InstanceStatusChanged {
-        instance_id: ctx.accounts.instance.instance_id,
-        status: ctx.accounts.instance.status as u8,
-    });
-
     Ok(())
 }
 
@@ -276,11 +266,6 @@ pub fn unfreeze_handler(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
     transition_to_active(&mut ctx.accounts.instance, now_ts)?;
 
-    emit!(InstanceStatusChanged {
-        instance_id: ctx.accounts.instance.instance_id,
-        status: ctx.accounts.instance.status as u8,
-    });
-
     Ok(())
 }
 
@@ -288,11 +273,6 @@ pub fn set_game_over_handler(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
     guards::assert_operator_wallet(&ctx.accounts.factory_state, &ctx.accounts.authority.key())?;
     let now_ts = Clock::get()?.unix_timestamp;
     transition_to_game_over(&mut ctx.accounts.instance, now_ts)?;
-
-    emit!(InstanceStatusChanged {
-        instance_id: ctx.accounts.instance.instance_id,
-        status: ctx.accounts.instance.status as u8,
-    });
 
     Ok(())
 }
@@ -369,11 +349,6 @@ pub fn close_instance_handler<'info>(
             &[signer_seeds],
         ))?;
     }
-
-    emit!(InstanceClosed {
-        instance_id: ctx.accounts.instance.instance_id,
-        recipient: ctx.accounts.recipient.key(),
-    });
 
     Ok(())
 }

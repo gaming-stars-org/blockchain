@@ -13,7 +13,6 @@ use crate::{
         SETTLEMENT_RECEIPT_SEED, TICKET_RECORD_SEED,
     },
     errors::GamingStarsError,
-    events::SettlementExecuted,
     instructions::{guards, vaults},
     state::{
         mark_ticket_forfeited, mark_ticket_paid, mark_ticket_refunded, ActiveEntry, FactoryState,
@@ -303,13 +302,6 @@ pub fn settle_payout_handler<'info>(
         ctx.bumps.settlement_receipt,
     );
 
-    emit!(SettlementExecuted {
-        settlement_id: args.settlement_id,
-        instance_id: args.instance_id,
-        ticket_id: args.ticket_id,
-        kind: SettlementKind::Payout as u8,
-    });
-
     Ok(())
 }
 
@@ -364,13 +356,6 @@ pub fn settle_refund_handler(ctx: Context<SettleRefund>, args: SettleRefundArgs)
         ctx.bumps.settlement_receipt,
     );
 
-    emit!(SettlementExecuted {
-        settlement_id: args.settlement_id,
-        instance_id: args.instance_id,
-        ticket_id: args.ticket_id,
-        kind: SettlementKind::Refund as u8,
-    });
-
     Ok(())
 }
 
@@ -422,13 +407,6 @@ pub fn settle_forfeit_handler<'info>(
         now_ts,
         ctx.bumps.settlement_receipt,
     );
-
-    emit!(SettlementExecuted {
-        settlement_id: args.settlement_id,
-        instance_id: args.instance_id,
-        ticket_id: args.ticket_id,
-        kind: SettlementKind::Forfeit as u8,
-    });
 
     Ok(())
 }
@@ -500,13 +478,6 @@ pub fn settle_insured_expiry_handler<'info>(
         now_ts,
         ctx.bumps.settlement_receipt,
     );
-
-    emit!(SettlementExecuted {
-        settlement_id: args.settlement_id,
-        instance_id: args.instance_id,
-        ticket_id: args.ticket_id,
-        kind: SettlementKind::InsuredExpiry as u8,
-    });
 
     Ok(())
 }
@@ -600,13 +571,6 @@ pub fn settle_users_batch_handler<'info>(
                     ctx.accounts.operator.key(),
                     now_ts,
                 )?;
-
-                emit!(SettlementExecuted {
-                    settlement_id: item.settlement_id,
-                    instance_id: args.instance_id,
-                    ticket_id: item.ticket_id,
-                    kind: SettlementKind::Payout as u8,
-                });
             }
             SettlementKind::Refund => {
                 let beneficiary = item
@@ -661,13 +625,6 @@ pub fn settle_users_batch_handler<'info>(
                     ctx.accounts.operator.key(),
                     now_ts,
                 )?;
-
-                emit!(SettlementExecuted {
-                    settlement_id: item.settlement_id,
-                    instance_id: args.instance_id,
-                    ticket_id: item.ticket_id,
-                    kind: SettlementKind::Refund as u8,
-                });
             }
             SettlementKind::Forfeit => {
                 execute_treasury_legs_with_cursor(
@@ -695,13 +652,6 @@ pub fn settle_users_batch_handler<'info>(
                     ctx.accounts.operator.key(),
                     now_ts,
                 )?;
-
-                emit!(SettlementExecuted {
-                    settlement_id: item.settlement_id,
-                    instance_id: args.instance_id,
-                    ticket_id: item.ticket_id,
-                    kind: SettlementKind::Forfeit as u8,
-                });
             }
             SettlementKind::InsuredExpiry => {
                 require!(
@@ -773,13 +723,6 @@ pub fn settle_users_batch_handler<'info>(
                     ctx.accounts.operator.key(),
                     now_ts,
                 )?;
-
-                emit!(SettlementExecuted {
-                    settlement_id: item.settlement_id,
-                    instance_id: args.instance_id,
-                    ticket_id: item.ticket_id,
-                    kind: SettlementKind::InsuredExpiry as u8,
-                });
             }
         }
 
