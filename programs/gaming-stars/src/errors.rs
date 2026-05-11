@@ -50,4 +50,10 @@ pub enum GamingStarsError {
     ActiveTicketExists,
     #[msg("Ticket is not insured")]
     TicketNotInsured,
+    #[msg("Instance is not in GameOver state")]
+    InstanceNotOver,
+    #[msg("Treasury vault is not empty")]
+    TreasuryVaultNotEmpty,
+    #[msg("Vault does not belong to this instance")]
+    InvalidTreasuryVault,
 }

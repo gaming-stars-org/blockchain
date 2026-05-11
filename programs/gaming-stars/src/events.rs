@@ -51,3 +51,16 @@ pub struct SettlementExecuted {
     pub ticket_id: u64,
     pub kind: u8,
 }
+
+#[event]
+pub struct GlobalLiquidityWithdrawn {
+    pub mint: Pubkey,
+    pub amount: u64,
+    pub master_wallet: Pubkey,
+}
+
+#[event]
+pub struct InstanceClosed {
+    pub instance_id: u64,
+    pub recipient: Pubkey,
+}
