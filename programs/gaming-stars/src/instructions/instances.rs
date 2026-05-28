@@ -4,16 +4,16 @@ use anchor_lang::system_program;
 use anchor_lang::solana_program::program_pack::Pack;
 use anchor_spl::token::spl_token::state::Account as SplTokenAccount;
 use anchor_spl::token_interface::{
-    initialize_account3, InitializeAccount3, TokenAccount as InterfaceTokenAccount, TokenInterface,
+    close_account, initialize_account3, CloseAccount, InitializeAccount3,
+    TokenAccount as InterfaceTokenAccount, TokenInterface,
 };
 
 use crate::{
     constants::{
-        FACTORY_STATE_SEED, GLOBAL_LIQUIDITY_VAULT_SEED, INSTANCE_SEED, MAX_ACCEPTED_MINTS,
-        MAX_INSURANCE_MINTS, TREASURY_VAULT_SEED,
+        FACTORY_STATE_SEED, GLOBAL_LIQUIDITY_VAULT_SEED, INSTANCE_AUTHORITY_SEED, INSTANCE_SEED,
+        MAX_ACCEPTED_MINTS, MAX_INSURANCE_MINTS, TREASURY_VAULT_SEED,
     },
     errors::GamingStarsError,
-    events::{InstanceDeployed, InstanceStatusChanged},
     instructions::guards,
     state::{
         transition_to_active, transition_to_game_over, transition_to_paused, FactoryState,
@@ -240,10 +240,6 @@ pub fn deploy_handler<'info>(
         .ok_or(GamingStarsError::ArithmeticOverflow)?;
     factory.updated_at = now_ts;
 
-    emit!(InstanceDeployed {
-        instance_id: instance.instance_id,
-    });
-
     Ok(())
 }
 
@@ -262,11 +258,6 @@ pub fn freeze_handler(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
     transition_to_paused(&mut ctx.accounts.instance, now_ts)?;
 
-    emit!(InstanceStatusChanged {
-        instance_id: ctx.accounts.instance.instance_id,
-        status: ctx.accounts.instance.status as u8,
-    });
-
     Ok(())
 }
 
@@ -274,11 +265,6 @@ pub fn unfreeze_handler(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
     guards::assert_owner_or_admin(&ctx.accounts.factory_state, &ctx.accounts.authority.key())?;
     let now_ts = Clock::get()?.unix_timestamp;
     transition_to_active(&mut ctx.accounts.instance, now_ts)?;
-
-    emit!(InstanceStatusChanged {
-        instance_id: ctx.accounts.instance.instance_id,
-        status: ctx.accounts.instance.status as u8,
-    });
 
     Ok(())
 }
@@ -288,10 +274,81 @@ pub fn set_game_over_handler(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
     let now_ts = Clock::get()?.unix_timestamp;
     transition_to_game_over(&mut ctx.accounts.instance, now_ts)?;
 
-    emit!(InstanceStatusChanged {
-        instance_id: ctx.accounts.instance.instance_id,
-        status: ctx.accounts.instance.status as u8,
-    });
+    Ok(())
+}
+
+#[derive(Accounts)]
+pub struct CloseInstance<'info> {
+    #[account(mut)]
+    pub authority: Signer<'info>,
+    #[account(seeds = [FACTORY_STATE_SEED], bump = factory_state.bump)]
+    pub factory_state: Account<'info, FactoryState>,
+    #[account(
+        mut,
+        seeds = [INSTANCE_SEED, &instance.instance_id.to_le_bytes()],
+        bump = instance.bump,
+        close = recipient
+    )]
+    pub instance: Account<'info, GameInstance>,
+    /// CHECK: PDA validated by seeds constraint below.
+    #[account(seeds = [INSTANCE_AUTHORITY_SEED, instance.key().as_ref()], bump)]
+    pub instance_authority: UncheckedAccount<'info>,
+    /// CHECK: rent recipient; no on-chain check, backend-controlled.
+    #[account(mut)]
+    pub recipient: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+pub fn close_instance_handler<'info>(
+    ctx: Context<'_, '_, 'info, 'info, CloseInstance<'info>>,
+) -> Result<()> {
+    guards::assert_operator_wallet(&ctx.accounts.factory_state, &ctx.accounts.authority.key())?;
+    require!(
+        ctx.accounts.instance.status == InstanceStatus::GameOver,
+        GamingStarsError::InstanceNotOver
+    );
+
+    let instance_key = ctx.accounts.instance.key();
+    let accepted_mints = ctx.accounts.instance.accepted_mints.clone();
+    require!(
+        ctx.remaining_accounts.len() == accepted_mints.len(),
+        GamingStarsError::InvalidTreasuryVault
+    );
+
+    let bump_seed = [ctx.bumps.instance_authority];
+    let signer_seeds: &[&[u8]] = &[
+        INSTANCE_AUTHORITY_SEED,
+        instance_key.as_ref(),
+        bump_seed.as_ref(),
+    ];
+
+    for (idx, mint_key) in accepted_mints.iter().enumerate() {
+        let vault_ai = &ctx.remaining_accounts[idx];
+        let vault = InterfaceAccount::<InterfaceTokenAccount>::try_from(vault_ai)?;
+
+        require_keys_eq!(vault.mint, *mint_key, GamingStarsError::InvalidTreasuryVault);
+        let (expected_treasury, _) =
+            crate::state::derive_treasury_vault(ctx.program_id, &instance_key, mint_key);
+        require_keys_eq!(
+            expected_treasury,
+            vault.key(),
+            GamingStarsError::InvalidTreasuryVault
+        );
+        require!(
+            vault.amount == 0,
+            GamingStarsError::TreasuryVaultNotEmpty
+        );
+
+        close_account(CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            CloseAccount {
+                account: vault.to_account_info(),
+                destination: ctx.accounts.recipient.to_account_info(),
+                authority: ctx.accounts.instance_authority.to_account_info(),
+            },
+            &[signer_seeds],
+        ))?;
+    }
 
     Ok(())
 }

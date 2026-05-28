@@ -2,7 +2,6 @@ use anchor_lang::prelude::*;
 
 use crate::{
     constants::{FACTORY_STATE_SEED, PROGRAM_VERSION},
-    events::FactoryInitialized,
     state::FactoryState,
 };
 
@@ -40,13 +39,6 @@ pub fn initialize_factory_handler(
     factory.created_at = now_ts;
     factory.updated_at = now_ts;
     factory.bump = ctx.bumps.factory_state;
-
-    emit!(FactoryInitialized {
-        owner: factory.owner,
-        dev_wallet,
-        master_wallet,
-        operator_wallet,
-    });
 
     Ok(())
 }

@@ -1,6 +1,5 @@
 pub mod constants;
 pub mod errors;
-pub mod events;
 pub mod instructions;
 pub mod state;
 
@@ -71,6 +70,13 @@ pub mod gaming_stars {
         topup_global_liquidity_handler(ctx, args)
     }
 
+    pub fn withdraw_global_liquidity(
+        ctx: Context<WithdrawGlobalLiquidity>,
+        args: WithdrawGlobalLiquidityArgs,
+    ) -> Result<()> {
+        withdraw_global_liquidity_handler(ctx, args)
+    }
+
     pub fn init_global_liquidity_vault(ctx: Context<InitGlobalLiquidityVault>) -> Result<()> {
         init_global_liquidity_vault_handler(ctx)
     }
@@ -113,5 +119,11 @@ pub mod gaming_stars {
 
     pub fn set_game_over(ctx: Context<UpdateInstanceStatus>) -> Result<()> {
         set_game_over_handler(ctx)
+    }
+
+    pub fn close_instance<'info>(
+        ctx: Context<'_, '_, 'info, 'info, CloseInstance<'info>>,
+    ) -> Result<()> {
+        close_instance_handler(ctx)
     }
 }

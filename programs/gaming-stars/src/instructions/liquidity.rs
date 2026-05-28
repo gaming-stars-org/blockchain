@@ -4,7 +4,7 @@ use anchor_spl::token_interface::{
 };
 
 use crate::{
-    constants::{FACTORY_STATE_SEED, GLOBAL_LIQUIDITY_VAULT_SEED},
+    constants::{FACTORY_STATE_SEED, GLOBAL_LIQUIDITY_VAULT_SEED, LIQUIDITY_AUTHORITY_SEED},
     errors::GamingStarsError,
     instructions::{guards, vaults},
     state::FactoryState,
@@ -91,6 +91,98 @@ pub fn topup_global_liquidity_handler(
                 to: ctx.accounts.global_liquidity_vault.to_account_info(),
                 authority: ctx.accounts.master_wallet.to_account_info(),
             },
+        ),
+        args.amount,
+        ctx.accounts.mint.decimals,
+    )?;
+
+    Ok(())
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct WithdrawGlobalLiquidityArgs {
+    pub mint: Pubkey,
+    pub amount: u64,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawGlobalLiquidity<'info> {
+    #[account(mut)]
+    pub master_wallet: Signer<'info>,
+    #[account(seeds = [FACTORY_STATE_SEED], bump = factory_state.bump)]
+    pub factory_state: Account<'info, FactoryState>,
+    pub mint: InterfaceAccount<'info, Mint>,
+    #[account(mut)]
+    pub master_token_account: InterfaceAccount<'info, TokenAccount>,
+    #[account(mut, seeds = [GLOBAL_LIQUIDITY_VAULT_SEED, mint.key().as_ref()], bump)]
+    pub global_liquidity_vault: InterfaceAccount<'info, TokenAccount>,
+    /// CHECK: PDA validated by seeds constraint below.
+    #[account(seeds = [LIQUIDITY_AUTHORITY_SEED], bump)]
+    pub liquidity_authority: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
+}
+
+pub fn withdraw_global_liquidity_handler(
+    ctx: Context<WithdrawGlobalLiquidity>,
+    args: WithdrawGlobalLiquidityArgs,
+) -> Result<()> {
+    guards::assert_master_wallet(
+        &ctx.accounts.factory_state,
+        &ctx.accounts.master_wallet.key(),
+    )?;
+
+    require!(args.amount > 0, GamingStarsError::InvalidAmount);
+    require_keys_eq!(
+        ctx.accounts.mint.key(),
+        args.mint,
+        GamingStarsError::InvalidMint
+    );
+    require_keys_eq!(
+        ctx.accounts.master_token_account.mint,
+        args.mint,
+        GamingStarsError::InvalidMint
+    );
+    require_keys_eq!(
+        ctx.accounts.global_liquidity_vault.mint,
+        args.mint,
+        GamingStarsError::InvalidMint
+    );
+    require_keys_eq!(
+        ctx.accounts.master_token_account.owner,
+        ctx.accounts.master_wallet.key(),
+        GamingStarsError::InvalidPayerAuthority
+    );
+
+    vaults::assert_global_liquidity_vault(
+        ctx.program_id,
+        &args.mint,
+        &ctx.accounts.global_liquidity_vault.key(),
+    )?;
+
+    require_keys_eq!(
+        ctx.accounts.global_liquidity_vault.owner,
+        ctx.accounts.liquidity_authority.key(),
+        GamingStarsError::VaultMismatch
+    );
+
+    require!(
+        ctx.accounts.global_liquidity_vault.amount >= args.amount,
+        GamingStarsError::InsufficientVaultBalance
+    );
+
+    let signer_seed_bump = [ctx.bumps.liquidity_authority];
+    let signer_seeds: &[&[u8]] = &[LIQUIDITY_AUTHORITY_SEED, signer_seed_bump.as_ref()];
+
+    transfer_checked(
+        CpiContext::new_with_signer(
+            ctx.accounts.token_program.to_account_info(),
+            TransferChecked {
+                mint: ctx.accounts.mint.to_account_info(),
+                from: ctx.accounts.global_liquidity_vault.to_account_info(),
+                to: ctx.accounts.master_token_account.to_account_info(),
+                authority: ctx.accounts.liquidity_authority.to_account_info(),
+            },
+            &[signer_seeds],
         ),
         args.amount,
         ctx.accounts.mint.decimals,

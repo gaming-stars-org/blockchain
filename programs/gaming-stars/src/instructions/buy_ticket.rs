@@ -6,7 +6,6 @@ use anchor_spl::token_interface::{
 use crate::{
     constants::{ACTIVE_ENTRY_SEED, FACTORY_STATE_SEED, INSTANCE_SEED, TICKET_RECORD_SEED},
     errors::GamingStarsError,
-    events::TicketPurchased,
     instructions::{guards, vaults},
     state::{ActiveEntry, EntryMode, FactoryState, GameInstance, TicketRecord, TicketStatus},
 };
@@ -268,13 +267,6 @@ pub fn buy_ticket_handler(ctx: Context<BuyTicket>, args: BuyTicketArgs) -> Resul
         .ok_or(GamingStarsError::ArithmeticOverflow)?;
     instance.last_activity_ts = now_ts;
     instance.updated_at = now_ts;
-
-    emit!(TicketPurchased {
-        instance_id: ticket.instance_id,
-        ticket_id,
-        owner: ticket.owner,
-        insured: ticket.insured,
-    });
 
     Ok(())
 }
